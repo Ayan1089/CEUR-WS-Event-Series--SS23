@@ -3604,7 +3604,7 @@
       },
       "instanceOf" : {
         "type" : "literal",
-        "value" : "http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256"
+        "value" : "http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256 http://www.wikidata.org/entity/Q47459256"
       },
       "dblpVenueId" : {
         "type" : "literal",

@@ -5,10 +5,13 @@ name: Build
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - dev
   pull_request:
-    branches: [ main ]
-
+    branches:
+      - main
+      - dev
 env:
   GHACTIONS: ACTIVE
 

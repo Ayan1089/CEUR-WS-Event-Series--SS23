@@ -9,13 +9,12 @@ import os
 from plp.ordinal import Ordinal
 
 from eventseries.src.main.matcher.nlp_matcher import NlpMatcher
-from eventseries.src.main.parsers.event_extractor import EventExtractor
 from eventseries.src.main.matcher.wikidata_matcher import Matcher
-from eventseries.src.main.util.record_attributes import TITLE, LABEL, CEUR_WS_TITLE, DBLP_EVENT_ID
+from eventseries.src.main.parsers.event_extractor import EventExtractor
+from eventseries.src.main.util.record_attributes import TITLE, LABEL, CEUR_WS_TITLE
 from eventseries.src.main.util.utility import Utility
-from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
-from query.queried_events import Events
 from import2Neo4j import ImportData_temp
+from query.queried_events import Events
 
 if __name__ == '__main__':
     importDataTemp = ImportData_temp.ImportData()
@@ -23,7 +22,7 @@ if __name__ == '__main__':
     # importDataTemp.import_data_to_neo4j(importDataTemp.new_func())
     # importDataTemp.import_event_series_to_neo4j(importDataTemp.new_func_series())
     # importDataTemp.counter_func()
-    importDataTemp.check_event_with_series(importDataTemp.new_func(),importDataTemp.new_func_series())
+    # importDataTemp.check_event_with_series(importDataTemp.new_func(), importDataTemp.new_func_series())
 
     '''Stored the queried events in resources/events.json '''
     events = Events()
@@ -91,4 +90,3 @@ if __name__ == '__main__':
     nlp_matcher.match()
 
     # nlp_matcher.
-

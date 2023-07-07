@@ -4,7 +4,7 @@
 
 1. Find [CEUR-WS](https://ceur-ws.org/) related academic events in [wikidata](https://www.wikidata.org/wiki/Q27230297)
 2. Some events have the [property 179](https://www.wikidata.org/wiki/Property:P179) (**part of the series**)
-3. For all events that dont have this property find whether,
+3. For all events that don't have this property find whether,
     - they are part of a conference/workshop series or
     - they are a standalone event
 6. Match events to their event series and update the property.
