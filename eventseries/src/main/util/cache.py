@@ -21,16 +21,16 @@ class Cache:
             return False
 
     def save_cache(self, filename):
-        with open(filename, 'wb') as file:
+        with open(filename, "wb") as file:
             pickle.dump(self.cache, file)
 
     def load_cache(self, filename):
         try:
-            with open(filename, 'rb') as file:
+            with open(filename, "rb") as file:
                 self.cache = pickle.load(file)
         except (FileNotFoundError, pickle.UnpicklingError):
             pass
 
     def print_cache_data(self, filename):
-        with open(filename, 'rb') as file:
+        with open(filename, "rb") as file:
             cache_data = pickle.load(file)

@@ -4,9 +4,11 @@ from typing import Optional, List
 # from VenueInformationClasses import VenueInformation
 from eventseries.src.main.dblp.VenueInformationClasses import VenueInformation
 
+
 @dataclass
 class Event:
     """An event that is mentioned in a EventSeries."""
+
     title: str
     year: Optional[int]
     location: Optional[str]

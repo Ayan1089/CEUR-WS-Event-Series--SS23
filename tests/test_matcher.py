@@ -1,8 +1,8 @@
-'''
+"""
 Created on 2023-05-01
 
 @author: Ayan
-'''
+"""
 import unittest
 
 from eventseries.src.main.matcher.wikidata_matcher import Matcher

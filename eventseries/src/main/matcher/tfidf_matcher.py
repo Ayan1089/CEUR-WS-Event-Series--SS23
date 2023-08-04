@@ -19,14 +19,15 @@ class TfIdfMatch:
         self.best_f1_score = -1
 
     def matcher(self):
-
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
         array1_strings = self.event_titles
         array2_strings = self.series_titles
         tfidf_matrix = vectorizer.fit_transform(self.event_titles + self.series_titles)
 
         # Calculate cosine similarity between array1 and array2
-        similarity_matrix = cosine_similarity(tfidf_matrix[:len(array1_strings)], tfidf_matrix[len(array1_strings):])
+        similarity_matrix = cosine_similarity(
+            tfidf_matrix[: len(array1_strings)], tfidf_matrix[len(array1_strings) :]
+        )
 
         # Threshold for partial match
         threshold_values = [0.5, 0.6, 0.7, 0.8, 0.9]
@@ -46,11 +47,11 @@ class TfIdfMatch:
                 new_col = -1
                 for col in range(num_cols):
                     element = similarity_matrix[row][col]
-                    if (element >= score):
+                    if element >= score:
                         score = element
                         new_row = row
                         new_col = col
-                if (new_row != -1 and new_col != -1):
+                if new_row != -1 and new_col != -1:
                     matches.append([new_row, new_col])
             #     print(matches)
 
@@ -68,10 +69,11 @@ class TfIdfMatch:
                 #         print(f"######SERIES######{array2_strings[array2_index]}")
 
                 if (
-                        self.matches_df.loc[
-                            self.matches_df['event'] == array1_strings[array1_index], 'event_series'].values[
-                            0]) == \
-                        array2_strings[array2_index]:
+                    self.matches_df.loc[
+                        self.matches_df["event"] == array1_strings[array1_index],
+                        "event_series",
+                    ].values[0]
+                ) == array2_strings[array2_index]:
                     #         if(matched_events_dict[array1_strings[array1_index]] >)
                     true_positives += 1
                 else:
@@ -80,7 +82,9 @@ class TfIdfMatch:
 
             # Series not matched to any event
             #     false_negatives = len(series_titles) - len(series_distinct)
-            false_negatives = len(self.event_titles) - (true_positives + false_positives)
+            false_negatives = len(self.event_titles) - (
+                true_positives + false_positives
+            )
 
             # print("Results with threshold: ", threshold)
             # print("true positives: ", true_positives)
@@ -102,15 +106,23 @@ class TfIdfMatch:
 
     def wikidata_match(self, existing_matches):
         partially_matched_events = []
-        events_file = os.path.join(os.path.abspath("resources"), "events_without_matches.json")
+        events_file = os.path.join(
+            os.path.abspath("resources"), "events_without_matches.json"
+        )
         series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
         with open(events_file) as file:
             events = json.load(file)
-            event_titles = [item['title'] for item in events if 'title' in item]
-        event_titles = [event for event in event_titles if event not in existing_matches]
+            event_titles = [item["title"] for item in events if "title" in item]
+        event_titles = [
+            event for event in event_titles if event not in existing_matches
+        ]
         with open(series_file) as file:
             series = json.load(file)
-            series_titles = [item["title"]["value"] for item in series["results"]["bindings"] if "title" in item]
+            series_titles = [
+                item["title"]["value"]
+                for item in series["results"]["bindings"]
+                if "title" in item
+            ]
 
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
         array1_strings = event_titles
@@ -118,7 +130,9 @@ class TfIdfMatch:
         tfidf_matrix = vectorizer.fit_transform(event_titles + series_titles)
 
         # Calculate cosine similarity between array1 and array2
-        similarity_matrix = cosine_similarity(tfidf_matrix[:len(array1_strings)], tfidf_matrix[len(array1_strings):])
+        similarity_matrix = cosine_similarity(
+            tfidf_matrix[: len(array1_strings)], tfidf_matrix[len(array1_strings) :]
+        )
 
         # Threshold for partial match
         threshold = self.best_threshold

@@ -1,13 +1,11 @@
-'''
+"""
 Created on 2023-05-01
 
 @author: Ayan
-'''
-import os
+"""
 import unittest
 
 from eventseries.src.main.query.queried_events import Events
-from pathlib import Path
 
 
 class QueryEvents(unittest.TestCase):

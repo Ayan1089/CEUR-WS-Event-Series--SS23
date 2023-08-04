@@ -14,22 +14,25 @@ def is_conference_description(wikidata_event):
 
 
 def match_wikidata_conference_to_series_dblp_id(
-        wikidata_df: pd.DataFrame,
-        event_series: List[EventSeries]
+    wikidata_df: pd.DataFrame, event_series: List[EventSeries]
 ):
     def get_series_for_conference(conf_id: str):
-        return next((series for series in event_series if conf_id.startswith(series.dblp_id)), None)
+        return next(
+            (series for series in event_series if conf_id.startswith(series.dblp_id)),
+            None,
+        )
 
     wikidata_df = wikidata_df[wikidata_df.dblpEventId.notna()]
-    conferences = wikidata_df[wikidata_df.apply(is_conference_description, axis=1)].copy()
-    conferences['series'] = conferences.dblpEventId.map(get_series_for_conference)
+    conferences = wikidata_df[
+        wikidata_df.apply(is_conference_description, axis=1)
+    ].copy()
+    conferences["series"] = conferences.dblpEventId.map(get_series_for_conference)
     print(f"Found {len(conferences)} dblp-conference-series for wikidata-conferences")
     return conferences
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     path_to_wikidata_events = Path("") / ".." / "resources" / "EventsWithoutSeries.json"
     match_wikidata_conference_to_series_dblp_id(
-        pd.read_json(path_to_wikidata_events),
-        load_event_series()
+        pd.read_json(path_to_wikidata_events), load_event_series()
     )

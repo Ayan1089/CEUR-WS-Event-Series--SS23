@@ -1,7 +1,7 @@
-import requests
 import os
-from pathlib import Path
-from lodstorage.query import QueryManager, Query
+
+import requests
+from lodstorage.query import Query
 from lodstorage.sparql import SPARQL
 
 
@@ -45,10 +45,7 @@ class Events(object):
             GROUP BY ?event
             ORDER BY DESC(?startTime)
             """
-        params = {
-            "query": query,
-            "format": "json"  # or json
-        }
+        params = {"query": query, "format": "json"}  # or json
         response = requests.request("POST", url, params=params)
 
         resources_path = os.path.abspath("resources")
@@ -56,7 +53,7 @@ class Events(object):
         file.write(response.text)
         file.close()
 
-    '''TODO: correct this, 2 queries are not required'''
+    """TODO: correct this, 2 queries are not required"""
 
     def read_as_dict(self):
         query_record = {
@@ -102,7 +99,7 @@ class Events(object):
                         }
                         GROUP BY ?event ?eventLabel
                         ORDER BY DESC(?startTime)
-                    """
+                    """,
         }
         endpoint_url = "https://query.wikidata.org/sparql"
         endpoint = SPARQL(endpoint_url)
@@ -135,13 +132,12 @@ class Events(object):
                 }
                 GROUP BY ?series ?seriesLabel
             """
-        params = {
-            "query": query,
-            "format": "json"  # or json
-        }
+        params = {"query": query, "format": "json"}  # or json
         response = requests.request("POST", url, params=params)
 
         resources_path = os.path.abspath("resources")
-        file = open(os.path.join(resources_path, "event_series.json"), "w", encoding="utf-8")
+        file = open(
+            os.path.join(resources_path, "event_series.json"), "w", encoding="utf-8"
+        )
         file.write(response.text)
         file.close()

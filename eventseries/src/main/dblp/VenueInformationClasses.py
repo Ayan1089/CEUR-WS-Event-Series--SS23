@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import List, Optional
 
-from bs4 import BeautifulSoup
-
 
 class YearRange:
-
-    def __init__(self, years: List[int], since: Optional[int] = None, until: Optional[int] = None):
-
+    def __init__(
+        self, years: List[int], since: Optional[int] = None, until: Optional[int] = None
+    ):
         if not years and since is None and until is None:
             raise ValueError("At least one parameter has to be given.")
 

@@ -2,19 +2,22 @@ import json
 import os
 import re
 
-from eventseries.src.main.import2Neo4j.neo_4j_connection import Neo4jConnection
 from eventseries.src.main.import2Neo4j.Neo4jDriver import Driver
+from eventseries.src.main.import2Neo4j.neo_4j_connection import Neo4jConnection
+
+
 # from import2Neo4j.Neo4jConnection import Neo4jConnection
-from rdflib import Graph, Literal, URIRef, XSD
 
 
 class ImportData:
     def fetch_data_and_import(self):
         ## Create connection
-        conn = Neo4jConnection(uri="bolt://localhost:7687", user="neo4j", pwd="Neelima@17")
+        conn = Neo4jConnection(
+            uri="bolt://localhost:7687", user="neo4j", pwd="Neelima@17"
+        )
         # resources_path = os.path.abspath("resources")
         # events = os.path.join(resources_path, "events_with_ordinal.json")
-        query_string = '''
+        query_string = """
         CALL apoc.load.json("file:///C:\\Users\\Vinay Shah\\Desktop\\All_Files\\CEUR-WS-Event-Series--SS23\\eventseries\\src\\main\\resources\\person.json")
 
         YIELD value
@@ -24,14 +27,14 @@ class ImportData:
         UNWIND value.children AS child
         MERGE (c:Person {name: child})
         MERGE (c)-[:CHILD_OF]->(p);
-        '''
-        print(conn.query(query_string, db='neo4j'))
+        """
+        print(conn.query(query_string, db="neo4j"))
 
     def new_func(self):
         resources_path = os.path.abspath("resources")
         events = os.path.join(resources_path, "events_with_ordinal.json")
 
-        with open(events, "r", encoding='utf-8') as json_file:
+        with open(events, "r", encoding="utf-8") as json_file:
             data = json.load(json_file)
         return data
 
@@ -44,8 +47,8 @@ class ImportData:
             # cypher_query = f"CREATE (n:Person {{name: '{data['name']}'}})"
             cypher_query = f"FOREACH (node in $data | CREATE (m:Events) SET m = node)"
             for node in data:
-                string = node['event']
-                match = re.search(r'Q(\d+)', string)
+                string = node["event"]
+                match = re.search(r"Q(\d+)", string)
                 if match:
                     qid = match.group(0)
                     cypher_query = (
@@ -92,7 +95,7 @@ class ImportData:
         notebooks_path = os.path.abspath("../../../notebooks")
         events_series = os.path.join(notebooks_path, "event_series_flattened.json")
 
-        with open(events_series, "r", encoding='utf-8') as json_file:
+        with open(events_series, "r", encoding="utf-8") as json_file:
             data = json.load(json_file)
         return data
 
@@ -104,11 +107,11 @@ class ImportData:
                 my_dict = dict()
                 for i in node:
                     # print(node[i]['value'])
-                    if i.lower() == 'series':
-                        match = re.search(r'Q(\d+)', node[i]['value'])
+                    if i.lower() == "series":
+                        match = re.search(r"Q(\d+)", node[i]["value"])
                         if match:
                             qid = match.group(0)
-                    my_dict[i] = node[i]['value']
+                    my_dict[i] = node[i]["value"]
                 # print(my_dict)
                 cypher_query = (
                     "MERGE (m:Events_Series {series: $my_dict.series}) "
@@ -148,12 +151,12 @@ class ImportData:
         with driver_1.session() as session:
             my_dict = dict()
             for series in series_data:
-                my_dict[series['series']['value']] = list()
+                my_dict[series["series"]["value"]] = list()
             for series in series_data:
                 for event in events_data:
-                    if 'series' in event:
-                        if series['series']['value'] == event['series']:
-                            my_dict[series['series']['value']].append(event['event'])
+                    if "series" in event:
+                        if series["series"]["value"] == event["series"]:
+                            my_dict[series["series"]["value"]].append(event["event"])
 
             for key, values in my_dict.items():
                 for value in values:
@@ -168,33 +171,33 @@ class ImportData:
         driver_1 = driver.connect()
         with driver_1.session() as session:
             resources_path = os.path.abspath("resources")
-            events_with_countries = os.path.join(resources_path, "events_with_countries.json")
+            events_with_countries = os.path.join(
+                resources_path, "events_with_countries.json"
+            )
 
-            with open(events_with_countries, "r", encoding='utf-8') as json_file:
+            with open(events_with_countries, "r", encoding="utf-8") as json_file:
                 countries_data = json.load(json_file)
             events_list = []
             event_country_dict = dict()
             for node in events_data:
-                events_list.append(node['event'])
+                events_list.append(node["event"])
             for node in countries_data:
-                event_country_dict[node['subject']] = node['object']
+                event_country_dict[node["subject"]] = node["object"]
 
-
-            for key,value in event_country_dict.items():
+            for key, value in event_country_dict.items():
                 if key in events_list:
                     for i in events_data:
-                        if i['event'] == key and 'country' in i:
-                            string = i['country']
-                            match = re.search(r'Q(\d+)', string)
+                        if i["event"] == key and "country" in i:
+                            string = i["country"]
+                            match = re.search(r"Q(\d+)", string)
                             if match:
                                 qid = match.group(0)
                             cypher_query = (
-                                    "MATCH (m:Events {event: $key}) "
-                                    "MERGE (n:Countries {country: m.country}) "
-                                    "CREATE (m)-[:`Took-place-in`]->(n) "
-                                    "SET m.country_label = $value "
-                                    "SET n.country_label = $value "
-                                    "SET n.qid = $qid"
+                                "MATCH (m:Events {event: $key}) "
+                                "MERGE (n:Countries {country: m.country}) "
+                                "CREATE (m)-[:`Took-place-in`]->(n) "
+                                "SET m.country_label = $value "
+                                "SET n.country_label = $value "
+                                "SET n.qid = $qid"
                             )
                             session.run(cypher_query, key=key, value=value, qid=qid)
-

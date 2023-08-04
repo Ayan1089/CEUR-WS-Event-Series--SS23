@@ -1,12 +1,18 @@
 [
-{
- "name":"Michael",
- "age": 41,
- "children": ["Selina","Rana","Selma"]
-},
-{
- "name":"Vinay",
- "age": 27,
- "children": ["Selma"]
-}
+  {
+    "name": "Michael",
+    "age": 41,
+    "children": [
+      "Selina",
+      "Rana",
+      "Selma"
+    ]
+  },
+  {
+    "name": "Vinay",
+    "age": 27,
+    "children": [
+      "Selma"
+    ]
+  }
 ]

@@ -14,6 +14,3 @@ class Match:
 
     def set_event_series(self, event_series):
         self._event_series = event_series
-
-
-
