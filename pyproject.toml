@@ -14,7 +14,7 @@ maintainers = [
 ]
 readme = "README.md"
 license = "Apache-2.0"
-dependencies = [̆
+dependencies = [
     # pyLoDStorage
     'pyLoDStorage>=0.4.9',
     # https://github.com/pyparsing/pyparsing
