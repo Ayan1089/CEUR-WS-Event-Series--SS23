@@ -30,7 +30,8 @@ dependencies = [
     'nltk>=3.8',
     'pandas>=1.4.4',
     'numpy>=1.21.5',
-    'orjson>=3.9.4'
+    'orjson>=3.9.4',
+    "validators"
 
 
 ]
