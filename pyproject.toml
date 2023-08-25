@@ -7,10 +7,12 @@ build-backend = "hatchling.build"
 [project]
 name = "eventseries"
 authors = [
-    { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de" }
+    { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de" },
+    { name = "Jakob Krude", email = "jakob.krude@rwth-aachen.de" }
 ]
 maintainers = [
     { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de" },
+    { name = "Jakob Krude", email = "jakob.krude@rwth-aachen.de" }
 ]
 readme = "README.md"
 license = "Apache-2.0"
@@ -31,7 +33,9 @@ dependencies = [
     'pandas>=1.4.4',
     'numpy>=1.21.5',
     'orjson>=3.9.4',
-    "validators"
+    "validators>=0.21.2",
+    "beautifulsoup4>=4.10",
+    "selenium>=4.11"
 
 
 ]
@@ -45,7 +49,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Web Environment",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
