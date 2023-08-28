@@ -17,25 +17,38 @@ class DblpScraper:
     def __init__(self, ctx: DblpContext) -> None:
         self.ctx: DblpContext = ctx
 
-    def extract_venue_information_of_cached(self):
+    def extract_venue_information_of_cached(self) -> pd.DataFrame:
+        """Extracts venue information from cached HTML content.
+        This function parses the cached HTML content stored in the dblp_cache
+        using BeautifulSoup and extracts venue information for each cached entry.
+        Returns the venue information as a DataFrame.
+        Be aware that there is no consistency check whether the cached html content
+         is in fact valid html.
+        Non conforming entries will be filtered out without warning.
+        If the html content contains more than one tag with the id 'info-section'
+         only the first is considered.
+        :returns
+            pd.DataFrame: A DataFrame containing dblp_id, tag, and venue columns.
+                         The 'dblp_id' column contains the identifiers for cached entries,
+                         the 'tag' column contains the extracted 'info-section' divs,
+                         and the 'venue' column contains the parsed venue information.
+                         Entries without valid venue information are filtered out.
+        """
         parse_restriction = SoupStrainer(id="info-section")
         soups = {
-            dblp_id: BeautifulSoup(
-                html, "html.parser", parse_only=parse_restriction
-            ).find(id="info-section")
+            dblp_id: BeautifulSoup(html, "html.parser", parse_only=parse_restriction).find(
+                id="info-section"
+            )
             for (dblp_id, html) in self.ctx.dblp_cache.items()
         }
         df = pd.DataFrame(soups.items(), columns=["dblp_id", "tag"])
         df = df[df.tag.notna()]  # filter out sites without venue information
-        df = df[
-            df.tag.apply(lambda div: len(div.find_all()) != 0)
-        ]  # filter out emtpy divs
+        df = df.loc[df.tag.apply(lambda div: len(div.find_all()) != 0)]  # filter out emtpy divs
         df["venue"] = df["tag"].map(parse_venue_div)
         return df
 
     def crawl_all_events_without_series(
-        self,
-        path_to_events: Path = Path("..") / "resources" / "EventsWithoutSeries.json",
+            self, path_to_events: Path = Path("..") / "resources" / "EventsWithoutSeries.json"
     ):
         with open(path_to_events) as events_json_file:
             events_df = pd.DataFrame(json.loads(events_json_file.read()))
@@ -62,9 +75,7 @@ class DblpScraper:
     def scrape_conf_index(
         conf_index_url: str, driver_instance: Optional[WebDriver] = None
     ) -> Tuple[List[str], Optional[str]]:
-        driver: WebDriver = (
-            driver_instance if driver_instance is not None else webdriver.Firefox()
-        )
+        driver: WebDriver = driver_instance if driver_instance is not None else webdriver.Firefox()
         driver.get(conf_index_url)
         conferences_div = driver.find_element(By.id, "browse-conf-output")
         ul_elements: list[WebElement] = conferences_div.find_elements(By.TAG_NAME, "ul")
@@ -77,12 +88,10 @@ class DblpScraper:
         links = [a_ele.get_attribute("href") for a_ele in a_elements]
 
         next_page_link_list = [
-            nextPage.get_attribute("href")
-            for nextPage in conferences_div.find_element(
-                By.TAG_NAME, "p"
-            ).find_elements(By.TAG_NAME, "a")
-            if nextPage.text == "[next 100 entries]"
-        ]
+    nextPage.get_attribute("href")
+    for nextPage in conferences_div.find_element(By.TAG_NAME, "p").find_elements(By.TAG_NAME, "a")
+    if nextPage.text == "[next 100 entries]"
+]
         if len(next_page_link_list) > 0:
             next_page_link = next_page_link_list[0]
         else:
@@ -103,14 +112,9 @@ class DblpScraper:
     def _resolve_redirecting(self, dblp_id: str, content: str):
         if "Redirecting ..." not in content:
             return
-        soup = BeautifulSoup(
-            content, "html.parser", parse_only=SoupStrainer("div", {"id": "main"})
-        )
+        soup = BeautifulSoup(content, "html.parser", parse_only=SoupStrainer("div", {"id": "main"}))
         real_url = (
-            soup.find("div", {"id": "main"})
-            .find("p", recursive=False)
-            .find("a")
-            .attrs["href"]
+            soup.find("div", {"id": "main"}).find("p", recursive=False).find("a").attrs["href"]
         )
         redirected_dblp_id = real_url.removeprefix("https://dblp.org/db/").removesuffix(
             "/index.html"
@@ -124,28 +128,16 @@ class DblpScraper:
         for dblp_event in event_dblp_ids:
             counter += 1
             try:
-                html = self.ctx.request_or_load_dblp(
-                    dblp_db_entry=dblp_event, wait_time=1
-                )
-                self._resolve_redirecting(
-                    dblp_event,
-                    html,
-                )
+                html = self.ctx.request_or_load_dblp(dblp_db_entry=dblp_event, wait_time=1)
+                self._resolve_redirecting(dblp_event, html)
 
             except ValueError as exc:
-                print(
-                    "Got exception for event: " + dblp_event + " with error " + str(exc)
-                )
+                print("Got exception for event: " + dblp_event + " with error " + str(exc))
             parent = Path(dblp_event).parent
             try:
                 self.ctx.request_or_load_dblp(dblp_db_entry=str(parent), wait_time=1)
             except ValueError as exc:
-                print(
-                    "Got exception for event: "
-                    + str(parent)
-                    + " with error "
-                    + str(exc)
-                )
+                print("Got exception for event: " + str(parent) + " with error " + str(exc))
             if counter % 100 == 0:
                 print("Loaded: " + str(counter))
             if counter % 200 == 0:

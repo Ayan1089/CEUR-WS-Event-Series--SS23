@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import requests
+import validators
 
 
 class DblpContext:
@@ -17,11 +18,25 @@ class DblpContext:
         load_cache: bool = True,
         store_on_delete: bool = False,
     ) -> None:
+
+        if dblp_base is None or cache_file_path is None\
+                or load_cache is None or store_on_delete is None:
+            raise ValueError("At least one parameter was None")
+        if not validators.url(dblp_base):
+            raise ValueError("dblp_base must be a valid url")
+        # Validate cache_file_path
+        if not isinstance(cache_file_path, Path):
+            raise TypeError("cache_file_path must be a Path object")
+        if not cache_file_path.exists():
+            raise ValueError("cache_file_path does not exist")
+        if not cache_file_path.is_dir():
+            raise ValueError("cache_file_path must be a directory")
+
         self.base_url: str = dblp_base
         self.dblp_cache: Dict[str, str] = {}  # 'dblp_id' : website content
-        self.store_on_delete = store_on_delete
-        self.dblp_conf_path = cache_file_path
-        self.dblp_base_path = cache_file_path.parent
+        self.store_on_delete: bool = store_on_delete
+        self.dblp_conf_path: Path = cache_file_path
+        self.dblp_base_path: Path = cache_file_path.parent
         if load_cache:
             self.load_cache()
 
@@ -40,6 +55,7 @@ class DblpContext:
         :return: the stored HTML representation as string
         :raises KeyError if there is nothing stored for this id.
         """
+        self._assert_is_cached(dblp_id)
         cleaned_id = DblpContext._validate_and_clean_dblp_id(dblp_id)
         return self.dblp_cache[cleaned_id]
 
@@ -58,6 +74,10 @@ class DblpContext:
         """Check whether the id is stored in the cache."""
         cleaned_id = DblpContext._validate_and_clean_dblp_id(dblp_id)
         return cleaned_id in self.dblp_cache
+
+    def _assert_is_cached(self, key: str):
+        if not self.is_cached(key):
+            raise ValueError("Id is not stored in cache: " + key)
 
     def load_cache(self):
         if not self.dblp_conf_path.is_dir() or not self.dblp_conf_path.exists():
@@ -162,12 +182,11 @@ class DblpContext:
         :return: A list of event-id's that start with the series_id.
         :raises ValueError if the series_id is not part of the cache.
         """
-        if not self.is_cached(series_id):
-            raise ValueError("Series id is not stored in cache: " + series_id)
-        return [key for key in self.dblp_cache if key.startswith(series_id)]
+        self._assert_is_cached(series_id)
+        return [key for key in self.dblp_cache if key.startswith(series_id) and key.count("/") > 1]
 
     def get_series_with_events(
-        self, series_ids: Optional[List[str]] = None
+            self, series_ids: Optional[List[str]] = None
     ) -> Dict[str, List[str]]:
         """
         Map every id in series_ids to all events that are part of the series.
