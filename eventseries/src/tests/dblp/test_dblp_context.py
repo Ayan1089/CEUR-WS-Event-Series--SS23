@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Optional
 from unittest.mock import patch, Mock
 
 from requests import Response
@@ -8,8 +9,23 @@ from requests import Response
 from eventseries.src.main.dblp.dblp_context import DblpContext
 
 
-class TestDblpContext(unittest.TestCase):
+class ManagedDblpContext:
+    def __init__(self):
+        self.tmp_dir_parent: Optional[tempfile.TemporaryDirectory] = None
 
+    def __enter__(self):
+        self.tmp_dir_parent = tempfile.TemporaryDirectory()
+        parent_path = Path(self.tmp_dir_parent.name)
+        test_cache_path = parent_path / "dblp"
+        test_cache_path.mkdir()
+        dblp_context = DblpContext(cache_file_path=test_cache_path, load_cache=False)
+        return dblp_context
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.tmp_dir_parent.cleanup()
+
+
+class TestDblpContext(unittest.TestCase):
     def setUp(self):
         self.tmp_dir_parent = tempfile.TemporaryDirectory()
         parent_path = Path(self.tmp_dir_parent.name)
