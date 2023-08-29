@@ -1,14 +1,11 @@
 import itertools
-import pickle
 import re
 from datetime import datetime
-from pathlib import Path
 from typing import List, Optional, Tuple
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, SoupStrainer
 
-from eventseries.src.main.dblp.dblp_context import DblpContext
-from eventseries.src.main.dblp.event_classes import DblpEvent, Event, EventSeries
+from eventseries.src.main.dblp.event_classes import DblpEvent, Event, DblpEventSeries
 from eventseries.src.main.dblp.venue_information import (
     HasPart,
     IsPartOf,
@@ -94,7 +91,7 @@ def event_from_title(full_title: str):
     return Event(title=title, year=opt_year, location=opt_location, ordinal=opt_ordinal)
 
 
-def dblp_event_from_tag(headline: Tag, given_dblp_id: Optional[str] = None):
+def dblp_event_from_tag(headline: Tag, given_dblp_id: Optional[str] = None) -> DblpEvent:
     if not isinstance(headline, Tag) or headline.attrs["id"] != "headline":
         raise ValueError(
             "headline parameter was either not instance of Tag or did not had "
@@ -108,6 +105,11 @@ def dblp_event_from_tag(headline: Tag, given_dblp_id: Optional[str] = None):
     )
     event = event_from_title(headline.find("h1").string)
     return DblpEvent(dblp_id=dblp_id, **event.__dict__)
+
+
+def dblp_event_from_html_content(html: str, dblp_id: str) -> DblpEvent:
+    soup = BeautifulSoup(html, "html.parser", parse_only=SoupStrainer(id="headline"))
+    return dblp_event_from_tag(soup.find(id="headline"), dblp_id)
 
 
 class EventSeriesParser:
@@ -158,7 +160,7 @@ class EventSeriesParser:
     def extract_dblp_id_from_header_tag(header: Tag):
         dblp_id = None
         if "data-stream" in header.attrs and header.attrs["data-stream"].startswith(
-            "conf/"
+                "conf/"
         ):
             dblp_id = header.attrs["data-stream"]
         if dblp_id is None and "data-bhtkey" in header.attrs:
@@ -172,10 +174,11 @@ class EventSeriesParser:
         return dblp_id
 
 
-def event_series_from_soup(soup: BeautifulSoup, given_dblp_id: Optional[str] = None):
+def event_series_from_soup(soup: BeautifulSoup,
+                           given_dblp_id: Optional[str] = None) -> DblpEventSeries:
     if not EventSeriesParser.is_event_series(soup):
         raise ValueError(
-            "Soup parameter is probably not representing an event series" + str(soup)
+            "Soup parameter is probably not representing an event series " + str(soup)
         )
     header = soup.find("header", {"id": "headline"})
 
@@ -224,13 +227,17 @@ def event_series_from_soup(soup: BeautifulSoup, given_dblp_id: Optional[str] = N
         )
     )
 
-    return EventSeries(
+    return DblpEventSeries(
         dblp_id=dblp_id,
         name=name,
         abbreviation=abbreviation,
         venue_information=venue_info,
         mentioned_events=events,
     )
+
+
+def dbpl_event_series_from_html_content(html: str, dblp_id: str = None) -> DblpEventSeries:
+    return event_series_from_soup(BeautifulSoup(html, "html.parser"), dblp_id)
 
 
 def name_with_opt_reference_from_tag(tag: BeautifulSoup):
@@ -308,7 +315,7 @@ class VenueInformationParser:
 
     @staticmethod
     def _parse_not_to_be_confused_with(
-        li_tag: BeautifulSoup,
+            li_tag: BeautifulSoup,
     ) -> NameWithOptionalReference:
         return name_with_opt_reference_from_tag(li_tag)
 
@@ -329,7 +336,7 @@ class VenueInformationParser:
         reference = name_with_opt_reference_from_tag(li_tag)
         em_text = li_tag.find("em").get_text()
         if "(" in em_text:
-            meta_info = em_text[em_text.find("(") + 1 : em_text.find(")")]
+            meta_info = em_text[em_text.find("(") + 1: em_text.find(")")]
             return Related(relation_qualifier=meta_info, reference=reference)
         return Related(reference=reference)
 
@@ -396,29 +403,3 @@ def parse_venue_div(info_section_div: BeautifulSoup) -> Optional[VenueInformatio
     except Exception as exc:
         print(f"Could not parse div: {info_section_div} got exception: {str(exc)}")
         return None
-
-
-def store_event_series(
-    context: DblpContext,
-    path: Path = Path(".") / ".." / "resources" / "dblp_event_series.pickle",
-):
-    event_series_ids = context.get_cached_series_keys()
-    event_series_ids.remove(
-        "conf/birthday"
-    )  # exclude Festschriften: Birthdays, In Memory of ..., In Honor of ...
-    event_series_ids.remove("conf/ac")  # remove advanced courses
-    series_contents = [context.get_cached(series) for series in event_series_ids]
-    event_series = [
-        event_series_from_soup(BeautifulSoup(series, "html.parser"))
-        for series in series_contents
-    ]
-    with open(path, "wb") as file:
-        pickle.dump(obj=event_series, file=file)
-
-
-def load_event_series(
-    path: Path = Path(".") / ".." / "resources" / "dblp_event_series.pickle",
-) -> List[EventSeries]:
-    with open(path, "rb") as file:
-        event_series: List[EventSeries] = pickle.load(file)
-        return event_series

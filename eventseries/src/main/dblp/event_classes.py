@@ -20,7 +20,7 @@ class DblpEvent(Event):
 
 
 @dataclass
-class EventSeries:
+class DblpEventSeries:
     dblp_id: str
     name: str
     abbreviation: Optional[str]

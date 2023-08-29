@@ -3,7 +3,7 @@ from typing import List
 
 import pandas as pd
 
-from eventseries.src.main.dblp.event_classes import EventSeries
+from eventseries.src.main.dblp.event_classes import DblpEventSeries
 from eventseries.src.main.dblp.parsing import load_event_series
 
 
@@ -14,7 +14,7 @@ def is_conference_description(wikidata_event):
 
 
 def match_wikidata_conference_to_series_dblp_id(
-        wikidata_df: pd.DataFrame, event_series: List[EventSeries]
+        wikidata_df: pd.DataFrame, event_series: List[DblpEventSeries]
 ):
     def get_series_for_conference(conf_id: str):
         return next(

@@ -1,4 +1,5 @@
 import time
+from importlib import resources as ires
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -12,14 +13,15 @@ class DblpContext:
     Everything is indexed based on the dblp-id (e.g. conf/aaai/affcon2019)."""
 
     def __init__(
-        self,
-        dblp_base: str = "https://dblp.org/db/",
-        cache_file_path: Path = Path("..") / "resources" / "dblp" / "conf",
-        load_cache: bool = True,
-        store_on_delete: bool = False,
+            self,
+            dblp_base: str = "https://dblp.org/db/",
+            cache_file_path: Path = ires.files(
+                "eventseries.src.main") / "resources" / "dblp" / "conf",
+            load_cache: bool = True,
+            store_on_delete: bool = False,
     ) -> None:
 
-        if dblp_base is None or cache_file_path is None\
+        if dblp_base is None or cache_file_path is None \
                 or load_cache is None or store_on_delete is None:
             raise ValueError("At least one parameter was None")
         if not validators.url(dblp_base):
@@ -146,16 +148,16 @@ class DblpContext:
         return response.text
 
     def request_or_load_dblp(
-        self,
-        dblp_db_entry: str,
-        ignore_cache: bool = False,
-        wait_time: Optional[float] = None,
-        **kwargs,
+            self,
+            dblp_db_entry: str,
+            ignore_cache: bool = False,
+            wait_time: Optional[float] = None,
+            **kwargs,
     ):
         if (
-            not ignore_cache
-            and self.is_cached(dblp_db_entry)
-            and self.get_cached(dblp_db_entry) != ""
+                not ignore_cache
+                and self.is_cached(dblp_db_entry)
+                and self.get_cached(dblp_db_entry) != ""
         ):
             return self.get_cached(dblp_db_entry)
         # Couldn't find id in cache -> requesting it:
