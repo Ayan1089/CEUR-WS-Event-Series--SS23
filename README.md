@@ -60,7 +60,29 @@ Event --> EventSeries: part of the series (P179)
 
 - NOTE: The project organization is currently under refactoring
 - The main module is `eventseries`
-    - More information about *dblp* can be found in `eventseries/src/main/dblp`
-    - Resources like `.json`, `.pickle` or `.csv` files are located in `eventseries/src/main/resources`
+  - More information about *dblp* can be found in `eventseries/src/main/dblp`
+  - Resources like `.json`, `.pickle` or `.csv` files are located
+    in `eventseries/src/main/resources`
 - Dataexploration and experiments are within notebooks in `notebooks`
-    - Data used within the notebooks should be placed in `data`
+  - Data used within the notebooks should be placed in `data`
+
+#### Known Issues
+
+- Classification of events
+  - A lot of workshops are classified as conference and not academic workshop
+  - Some conferences are classified as workshops,
+    likely due to missing disambiguation between the conference and a workshop hosted at that
+    conference
+    - http://www.wikidata.org/entity/Q113638423'
+    - http://www.wikidata.org/entity/Q113637342'
+    - http://www.wikidata.org/entity/Q113674405'
+    - http://www.wikidata.org/entity/Q113649411'
+    - http://www.wikidata.org/entity/Q113922773'
+    - http://www.wikidata.org/entity/Q118164538'
+    - http://www.wikidata.org/entity/Q113656570'
+    - http://www.wikidata.org/entity/Q113646150'
+    - http://www.wikidata.org/entity/Q113672458'
+    - http://www.wikidata.org/entity/Q113625151'
+    - http://www.wikidata.org/entity/Q113623296'
+    - http://www.wikidata.org/entity/Q113649178'
+    - http://www.wikidata.org/entity/Q113576146'
