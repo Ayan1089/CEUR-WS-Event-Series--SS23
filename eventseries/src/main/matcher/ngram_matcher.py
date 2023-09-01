@@ -18,6 +18,7 @@ class NgramMatch:
         self.matches_df["event_series"] = self.series_titles
         self.series_distinct: List[str] = []
         self.n_grams = [3, 4, 5]
+        self.recall = 0
         self.threshold_values = [1, 0.9, 0.8, 0.7, 0.6, 0.5]
         self.best_threshold = 0
         self.best_n = 0
@@ -110,6 +111,7 @@ class NgramMatch:
         print(f"Statistics for {best_n_gram}-grams and threshold: {best_threshold}->")
         print("Precision: ", best_precision)
         print("Recall: ", best_recall)
+        self.recall = best_recall
         print("F1-Score: ", max_f1_score)
         # print("Maximum number of partial matches: ", max_matches)
         self.best_n = best_n_gram
@@ -121,10 +123,10 @@ class NgramMatch:
         event_titles: List[str],
         series_titles: List[str],
     ) -> List[str]:
+        if self.recall == 1:
+            print("Model is overfitting, and cannot be used")
+            return []
         partially_matched_events = []
-        event_titles = [
-            event for event in event_titles if event not in existing_matches
-        ]
 
         for event in event_titles:
             matched_events_dict: Dict[str, float] = {}

@@ -15,6 +15,7 @@ class TfIdfMatch:
         self.event_titles = matches_df["event"].tolist()
         self.best_threshold = -1
         self.best_f1_score = -1
+        self.recall = 0
 
     def matcher(self):
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
@@ -91,6 +92,7 @@ class TfIdfMatch:
             precision = true_positives / (true_positives + false_positives)
             # print("Precision: ", precision)
             recall = true_positives / (true_positives + false_negatives)
+            self.recall = recall
             # print("Recall: ", recall)
             f1_score = 2 * (precision * recall) / (precision + recall)
             if f1_score > self.best_f1_score:
@@ -108,9 +110,9 @@ class TfIdfMatch:
         event_titles: List[str],
         series_titles: List[str],
     ) -> List[str]:
-        event_titles = [
-            event for event in event_titles if event not in existing_matches
-        ]
+        if self.recall == 1:
+            print("Model is overfitting, and cannot be used")
+            return []
 
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
         array1_strings = event_titles

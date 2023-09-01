@@ -22,6 +22,7 @@ class PhraseMatch:
         # Only run nlp.make_doc to speed things up
         self.matches_df = matches_df
         self.matches_df.dropna(inplace=True)
+        self.recall = 0
         series_titles = matches_df["event_series"].tolist()
         patterns = [self.nlp.make_doc(text) for text in series_titles]
         self.event_titles = matches_df["event"].tolist()
@@ -64,6 +65,7 @@ class PhraseMatch:
         precision = true_positives / (true_positives + false_positives)
         print("Precision: ", precision)
         recall = true_positives / (true_positives + false_negatives)
+        self.recall = recall
         print("Recall: ", recall)
         f1_score = 2 * (precision * recall) / (precision + recall)
         print("F1-Score: ", f1_score)
@@ -73,6 +75,9 @@ class PhraseMatch:
     def wikidata_match(
         self, event_titles: List[str], series_titles: List[str]
     ) -> List[str]:
+        if self.recall == 1:
+            print("Model is overfitting, and cannot be used")
+            return []
         nlp = spacy.load("en_core_web_sm")
         patterns = [nlp.make_doc(text) for text in series_titles]
         phrase_matcher = spacy.matcher.PhraseMatcher(nlp.vocab)

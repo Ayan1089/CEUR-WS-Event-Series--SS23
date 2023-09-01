@@ -22,13 +22,9 @@ class AcronymMatch:
 
     def wikidata_match(
             self,
-            existing_matches: List[str],
             event_titles: List[str],
             series_titles: List[str],
     ) -> List[str]:
-        event_titles = [
-            event for event in event_titles if event not in existing_matches
-        ]
         event_acronyms = self.extract_event_acronyms(event_titles)
         series_acronyms = self.extract_series_acronyms()
         # for title in event_titles:

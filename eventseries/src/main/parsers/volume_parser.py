@@ -90,7 +90,7 @@ class VolumeParser:
             # Process the completed futures
             for future in concurrent.futures.as_completed(futures):
                 title = future.result()
-                if title[CEUR_WS_TITLE] is not None:
+                if CEUR_WS_TITLE in title and title[CEUR_WS_TITLE] is not None:
                     records_with_titles.append(title)
 
         util = Utility()

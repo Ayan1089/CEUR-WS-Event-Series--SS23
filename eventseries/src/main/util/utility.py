@@ -3,6 +3,8 @@ import json
 import os
 import re
 
+import pandas as pd
+
 # from eventseries.src.main.dblp.EventClasses import EventSeries
 from eventseries.src.main.util.record_attributes import CEUR_WS_TITLE, LABEL, TITLE
 
@@ -88,6 +90,8 @@ class Utility(object):
         with open(events_file) as file:
             events = json.load(file)
             event_titles = [item["title"] for item in events if "title" in item]
+            events_with_id = [item["event"] for item in events if "event" in item]
+        events_df = pd.DataFrame({"title": event_titles, "event": events_with_id})
         return event_titles
 
     def read_event_acronyms(self):
@@ -111,6 +115,12 @@ class Utility(object):
                 for item in series["results"]["bindings"]
                 if "title" in item
             ]
+            series_with_id = [
+                item["series"]["value"]
+                for item in series["results"]["bindings"]
+                if "series" in item
+            ]
+        series_df = pd.DataFrame({"title": event_titles, "event": events_with_id})
         return series_titles
 
     def read_event_series_acronyms(self):
