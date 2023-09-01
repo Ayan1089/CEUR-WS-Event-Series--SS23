@@ -87,11 +87,15 @@ class Utility(object):
         events_file = os.path.join(
             os.path.abspath("resources"), "events_without_matches.json"
         )
+        event_titles = []
+        events_with_id = []
         with open(events_file) as file:
             events = json.load(file)
-            event_titles = [item["title"] for item in events if "title" in item]
-            events_with_id = [item["event"] for item in events if "event" in item]
-        events_df = pd.DataFrame({"title": event_titles, "event": events_with_id})
+            for event in events:
+                if "title" in event:
+                    event_titles.append(event["title"])
+                    events_with_id.append(event["event"])
+        events_df = pd.DataFrame({"title": event_titles, "event_id": events_with_id})
         return event_titles
 
     def read_event_acronyms(self):
@@ -108,19 +112,15 @@ class Utility(object):
     def read_event_series_titles(self):
         """Json reader for wikidata event series titles"""
         series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
+        series_titles = []
+        series_with_id = []
         with open(series_file) as file:
             series = json.load(file)
-            series_titles = [
-                item["title"]["value"]
-                for item in series["results"]["bindings"]
-                if "title" in item
-            ]
-            series_with_id = [
-                item["series"]["value"]
-                for item in series["results"]["bindings"]
-                if "series" in item
-            ]
-        series_df = pd.DataFrame({"title": event_titles, "event": events_with_id})
+            for item in series["results"]["bindings"]:
+                if "title" in item:
+                    series_titles.append(item["title"]["value"])
+                    series_with_id.append(item["series"]["value"])
+        series_df = pd.DataFrame({"title": series_titles, "series_id": series_with_id})
         return series_titles
 
     def read_event_series_acronyms(self):
