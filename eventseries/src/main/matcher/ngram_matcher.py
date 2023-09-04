@@ -119,21 +119,24 @@ class NgramMatch:
 
     def wikidata_match(
         self,
-        existing_matches: List[str],
-        event_titles: List[str],
-        series_titles: List[str],
-    ) -> List[str]:
+        events_df: pd.DataFrame,
+        series_df: pd.DataFrame,
+    ) -> pd.DataFrame:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
-            return []
+            return pd.DataFrame()
         partially_matched_events = []
+        partially_matched_events_ids = []
+        partially_matched_series = []
+        partially_matched_series_ids = []
 
-        for event in event_titles:
+        for i in range(0, len(events_df)):
             matched_events_dict: Dict[str, float] = {}
             matched_series = ""
-            event_ngrams = set(ngrams(event.split(), self.best_n))
-            for series in series_titles:
-                series_ngrams = set(ngrams(series.split(), self.best_n))
+            matched_series_id = ""
+            event_ngrams = set(ngrams(events_df.loc[i, "title"].split(), self.best_n))
+            for j in range(0, len(series_df)):
+                series_ngrams = set(ngrams(series_df.loc[j, "title"].split(), self.best_n))
                 """There can be cases that series or events don't have 3 words"""
                 if len(event_ngrams.union(series_ngrams)) > 0:
                     similarity = 1 - jaccard_distance(event_ngrams, series_ngrams)
@@ -141,15 +144,16 @@ class NgramMatch:
                 if (
                     (similarity >= self.best_threshold)
                     and (
-                        event in matched_events_dict
-                        and similarity > matched_events_dict[event]
+                        events_df.loc[i, "title"] in matched_events_dict
+                        and similarity > matched_events_dict[events_df.loc[i, "title"]]
                     )
                 ) or (
-                    event not in matched_events_dict
+                    events_df.loc[i, "title"] not in matched_events_dict
                     and similarity >= self.best_threshold
                 ):
-                    matched_events_dict[event] = similarity
-                    matched_series = series
+                    matched_events_dict[events_df.loc[i, "title"]] = similarity
+                    matched_series = series_df.loc[j, "title"]
+                    matched_series_id = series_df.loc[j, "series_id"]
             # print("Partial match found:")
             # print(f"#####EVENT#####{event}")
             # print(f"######SERIES######{matched_series}")
@@ -157,12 +161,21 @@ class NgramMatch:
             #         series_distinct.append(series)
             # print()
             if matched_series != "":
-                partially_matched_events.append(event)
+                partially_matched_events.append(events_df.loc[i, "title"])
+                partially_matched_events_ids.append(events_df.loc[i, "event_id"])
+                partially_matched_series.append(matched_series)
+                partially_matched_series_ids.append(matched_series_id)
+
+
         print(
             "Number of unique matches from n-grams in Wikidata: ",
             len(partially_matched_events),
         )
-        return partially_matched_events
+        results_df = pd.DataFrame(
+            {"event_title": partially_matched_events, "event_id": partially_matched_events_ids, "series_title": partially_matched_series,
+             "series_id": partially_matched_series_ids})
+
+        return results_df
 
     def remove_stopwords(self, text_list):
         # Remove stopwords from each string in the list

@@ -45,4 +45,7 @@ if __name__ == "__main__":
 
     # nlp matches
     nlp_matcher = NlpMatcher(event_extractor, matcher)
-    nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())
+    results_df = nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())
+
+    # Dumping results into a json
+    results_df.to_json("/Users/ayan/Projects/KGLab/main/CEUR-WS-Event-Series--SS23/eventseries/src/main/resources/results.json")

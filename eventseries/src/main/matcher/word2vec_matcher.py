@@ -101,24 +101,27 @@ class Word2VecMatch:
 
     def wikidata_match(
             self,
-            existing_matches: List[str],
-            event_titles: List[str],
-            series_titles: List[str],
-    ) -> List[str]:
+            events_df: pd.DataFrame,
+            series_df: pd.DataFrame,
+    ) -> pd.DataFrame:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
-            return []
-        event_tokenized_titles = self.remove_stopwords_tokenize(event_titles)
+            return pd.DataFrame()
+        event_tokenized_titles = self.remove_stopwords_tokenize(events_df["title"].tolist())
         event_tokenized_titles = [[token.lower() for token in tokens] for tokens in event_tokenized_titles]
 
-        series_tokenized_titles = self.remove_stopwords_tokenize(series_titles)
+        series_tokenized_titles = self.remove_stopwords_tokenize(series_df["title"].tolist())
         series_tokenized_titles = [[token.lower() for token in tokens] for tokens in series_tokenized_titles]
 
         data_list_single_column = [[inner_list] for inner_list in event_tokenized_titles]
-        matches_events_df = pd.DataFrame({"events_tokenized": data_list_single_column, "events": event_titles})
+        matches_events_df = pd.DataFrame(
+            {"events_tokenized": data_list_single_column, "title": events_df["title"].tolist(),
+             "event_id": events_df["event_id"].tolist()})
 
         data_list_single_column = [[inner_list] for inner_list in series_tokenized_titles]
-        matches_series_df = pd.DataFrame({"series_tokenized": data_list_single_column, "event_series": series_titles})
+        matches_series_df = pd.DataFrame(
+            {"series_tokenized": data_list_single_column, "title": series_df["title"].tolist(),
+             "series_id": series_df["series_id"].tolist()})
 
         event_vector_list = []
         for event_tokens in event_tokenized_titles:
@@ -135,27 +138,39 @@ class Word2VecMatch:
         matches_series_df["event_series_vectors"] = series_vector_list
 
         matching_events = []
+        matching_events_ids = []
         matching_series = []
+        matching_series_ids = []
         for i in range(0, len(matches_events_df["event_vectors"])):
-            max_similarity = 0
             best_event = None
+            best_event_id = None
             best_series = None
+            best_series_id = None
+            similarities = {}
             for j in range(0, len(matches_series_df["event_series_vectors"])):
                 try:
                     similarity = cosine_similarity(matches_events_df.loc[i, "event_vectors"],
                                                    matches_series_df.loc[j, "event_series_vectors"])[0][0]
+                    similarities[similarity] = j
                 except ValueError:
                     continue
-                if similarity > max_similarity:
-                    best_event = i
-                    best_series = j
-                    max_similarity = similarity
-            if max_similarity > self.best_threshold:
-                matching_events.append(matches_events_df.loc[best_event, "events"])
-                matching_series.append(matches_series_df.loc[best_series, "event_series"])
-        print(
-            f"Number of Word2Vec matches from event titles in Wikidata with skip grams: {self.skip_grams} - {len(matching_events)}")
-        return matching_events
+
+            if len(similarities.keys()) != 0 and max(similarities.keys()) > self.best_threshold:
+                best_event = matches_events_df.loc[i, "title"]
+                best_event_id = matches_events_df.loc[i, "event_id"]
+                best_series = matches_series_df.loc[similarities[max(similarities.keys())], "title"]
+                best_series_id = matches_series_df.loc[similarities[max(similarities.keys())], "series_id"]
+                matching_events.append(best_event)
+                matching_events_ids.append(best_event_id)
+                matching_series.append(best_series)
+                matching_series_ids.append(best_series_id)
+        results_df = pd.DataFrame(
+            {"event_title": matching_events, "event_id": matching_events_ids,
+             "series_title": matching_series,
+             "series_id": matching_series_ids})
+        results_df.drop_duplicates(subset="event_id", inplace=True)
+        print("Number of Word2Vec matches from event titles in Wikidata: ", len(matching_events))
+        return results_df
 
     def remove_stopwords_tokenize(self, text_list) -> List[List[str]]:
         # Remove stopwords from each string in the list

@@ -89,14 +89,19 @@ class Utility(object):
         )
         event_titles = []
         events_with_id = []
+        event_acronyms = []
         with open(events_file) as file:
             events = json.load(file)
             for event in events:
                 if "title" in event:
                     event_titles.append(event["title"])
                     events_with_id.append(event["event"])
-        events_df = pd.DataFrame({"title": event_titles, "event_id": events_with_id})
-        return event_titles
+                    if "acronym" in event:
+                        event_acronyms.append(event["acronym"])
+                    else:
+                        event_acronyms.append("")
+        events_df = pd.DataFrame({"title": event_titles, "event_id": events_with_id, "event_acronyms": event_acronyms})
+        return events_df
 
     def read_event_acronyms(self):
         """Json reader for wikidata event titles"""
@@ -114,14 +119,19 @@ class Utility(object):
         series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
         series_titles = []
         series_with_id = []
+        series_acronyms = []
         with open(series_file) as file:
             series = json.load(file)
             for item in series["results"]["bindings"]:
                 if "title" in item:
                     series_titles.append(item["title"]["value"])
                     series_with_id.append(item["series"]["value"])
-        series_df = pd.DataFrame({"title": series_titles, "series_id": series_with_id})
-        return series_titles
+                    if "acronym" in item:
+                        series_acronyms.append(item["acronym"]["value"])
+                    else:
+                        series_acronyms.append("")
+        series_df = pd.DataFrame({"title": series_titles, "series_id": series_with_id, "series_acronyms": series_acronyms})
+        return series_df
 
     def read_event_series_acronyms(self):
         """Json reader for wikidata event series titles"""
