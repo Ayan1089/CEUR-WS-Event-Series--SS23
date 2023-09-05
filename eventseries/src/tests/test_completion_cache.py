@@ -25,11 +25,11 @@ class TestCompletionCache(TestCase):
         self.temp_dir.cleanup()
 
     def test_add_completion_for_qid(self):
-        self.assertEqual(0, len(self.repo.cache[CompletionCache.EVENT_COMPLETION]))
+        self.assertEqual(0, len(self.repo.cache[CompletionCache.ITEM_COMPLETION]))
         self.repo.add_completion_for_qid(qid="Q123", completion=self.with_acronym)
-        self.assertEqual(1, len(self.repo.cache[CompletionCache.EVENT_COMPLETION]))
+        self.assertEqual(1, len(self.repo.cache[CompletionCache.ITEM_COMPLETION]))
         self.assertEqual(
-            self.with_acronym, self.repo.cache[CompletionCache.EVENT_COMPLETION]["Q123"][0]
+            self.with_acronym, self.repo.cache[CompletionCache.ITEM_COMPLETION]["Q123"][0]
         )
 
     def test_get_completions_for_qid(self):

@@ -53,7 +53,7 @@ class CachedContext(Generic[T]):
             self.store_content_to_file(file_path, file_content, overwrite)
 
     @abc.abstractmethod
-    def store_content_to_file(self, file_path, file_content, overwrite: bool):
+    def store_content_to_file(self, file_path: Path, file_content, overwrite: bool):
         pass
 
     def get_cached(self, key: str) -> T:
