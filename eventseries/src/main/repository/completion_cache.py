@@ -19,7 +19,7 @@ class CompletionCache(CachedContext):
     ):
         super().__init__(resource_dir, load_on_init, store_on_delete)
         self.matches: List[Match] = self.cache.get(CompletionCache.MATCHES, [])
-        self.event_completions: Dict[str, List[WikidataItemCompletion]] = self.cache.get(
+        self.event_completions: Dict[QID, List[WikidataItemCompletion]] = self.cache.get(
             CompletionCache.ITEM_COMPLETION, {}
         )
         self.cache[CompletionCache.MATCHES] = self.matches
@@ -48,12 +48,12 @@ class CompletionCache(CachedContext):
             return completions[qid]
         return []
 
-    def add_completion_for_qid(self, qid: QID, completion: WikidataItemCompletion):
+    def add_completion(self, completion: WikidataItemCompletion):
         completions = self.cache[CompletionCache.ITEM_COMPLETION]
-        if qid in completions:
-            completions[qid].append(completion)
+        if completion.qid in completions:
+            completions[completion.qid].append(completion)
         else:
-            completions[qid] = [completion]
+            completions[completion.qid] = [completion]
 
     def get_all_matches(self) -> List[Match]:
         """Return a copy of all matches stored by this cache."""

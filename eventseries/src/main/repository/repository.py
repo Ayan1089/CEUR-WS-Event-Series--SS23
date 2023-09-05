@@ -36,6 +36,9 @@ class Repository:
 
         self._add_type_to_events_and_series()
 
+    def matches_by_event_qid(self):
+        return {match.event.qid: match for match in self.completion_cache.get_all_matches()}
+
     def get_event_by_qid(self, qid: QID, patched: bool = True) -> WikiDataEvent:
         raw_event = self.events_by_qid[qid]
         if not patched:
@@ -63,11 +66,24 @@ class Repository:
     def get_dblp_event_by_id(self, dblp_id: str) -> DblpEvent:
         return self.dblp_repo.get_or_load_event(dblp_id)
 
+
     def get_dblp_event_series_by_id(self, dblp_id: str) -> DblpEventSeries:
         return self.dblp_repo.get_or_load_event_series(dblp_id)
 
+
     def get_matches(self) -> list[Match]:
         return self.completion_cache.get_all_matches()
+
+
+    def events_without_series(self, ignore_match_completions: bool = False):
+        events_without_series = [
+            event for event in self.events_by_qid.values() if event.part_of_series is None
+        ]
+        if ignore_match_completions:
+            return events_without_series
+        matches_dict = self.matches_by_event_qid()
+        return [event for event in events_without_series if event.qid not in matches_dict]
+
 
     def _add_type_to_events_and_series(self):
         for conf_series in self.query_manager.wikidata_conference_series():

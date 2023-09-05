@@ -70,8 +70,8 @@ class TestRepository(TestCase):
         self.assertEqual([QID("Q47459256")], series.instance_of)
 
         missing_acronym_qid = QID("Q105698882")
-        self.repo.completion_cache.add_completion_for_qid(
-            missing_acronym_qid, WithAcronym(missing_acronym_qid, acronym="IWSG", found_by=None)
+        self.repo.completion_cache.add_completion(
+            WithAcronym(missing_acronym_qid, acronym="IWSG", found_by=None)
         )
         missing_acronym_series = self.repo.get_event_series_by_qid(
             missing_acronym_qid, patched=False

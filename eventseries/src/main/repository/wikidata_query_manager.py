@@ -288,6 +288,6 @@ class WikiDataQueryManager(CachedContext[List]):
             GROUP BY ?proceeding ?proceedingLabel ?event
             """
 
-    return self.exec_query(
-        WikiDataQueryManager.PROCEEDINGS, query, result_parser=_parse_proceedings, **kwargs
-    )
+        return self.exec_query(
+            WikiDataQueryManager.PROCEEDINGS, query, result_parser=_parse_proceedings, **kwargs
+        )
