@@ -1,48 +1,62 @@
 """
 Created on 2023-05-03
 
-@author: Ayan1089
+@author: Ayan1089, jkrude
 """
+from typing import List
 
-from eventseries.src.main.completeSeries.series_completion import SeriesCompletion
-from eventseries.src.main.matcher.full_matcher import FullMatch
-from eventseries.src.main.matcher.nlp_matcher import NlpMatcher
+from eventseries.src.main.completion.attribute_completion import (
+    complete_ordinals,
+    complete_ceurws_title,
+)
+from eventseries.src.main.completion.series_completion import SeriesCompletion
+from eventseries.src.main.dblp.dblp_context import DblpContext
+from eventseries.src.main.matcher.full_matcher import full_matches
+from eventseries.src.main.repository.completion_cache import CompletionCache
+from eventseries.src.main.repository.dblp_respository import DblpRepository
+from eventseries.src.main.repository.repository import Repository
+from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataProceeding
+from eventseries.src.main.repository.wikidata_query_manager import WikiDataQueryManager
 
-# from eventseries.src.main.matcher.nlp_matcher import NlpMatcher
-from eventseries.src.main.matcher.wikidata_matcher import Matcher
-from eventseries.src.main.parsers.event_extractor import EventExtractor
-from eventseries.src.main.parsers.ordiniality_extractor import OrdinalExtractor
-from eventseries.src.main.query.query_series import WikidataEventSeries
-from eventseries.src.main.util.utility import Utility
+
+def complete_information(repo: Repository):
+    events: List[WikiDataEvent] = list(repo.events_by_qid.values())
+    proceedings: List[WikiDataProceeding] = list(repo.proceeding_by_event_qid.values())
+
+    # try to extract the ordinal for events
+    for ordinal_completion in complete_ordinals(events):
+        repo.completion_cache.add_completion(ordinal_completion)
+    # add ceurws_title to all proceedings
+    for ceurws_title_completion in complete_ceurws_title(proceedings):
+        repo.completion_cache.add_completion(ceurws_title_completion)
+
 
 if __name__ == "__main__":
-    # importDataTemp = ImportData.ImportData()
-    # importDataTemp.fetch_data_and_import()
-    # importDataTemp.import_data_to_neo4j(importDataTemp.new_func())
-    # importDataTemp.import_event_series_to_neo4j(importDataTemp.new_func_series())
-    # importDataTemp.counter_func()
-    # importDataTemp.check_event_with_series(importDataTemp.new_func(), importDataTemp.new_func_series())
+    repository = Repository(
+        query_manager=WikiDataQueryManager(),
+        dblp_repo=DblpRepository(dblp_context=DblpContext()),
+        completion_cache=CompletionCache(),
+    )
 
-    # Query event series
-    event_series = WikidataEventSeries()
-    event_series.event_series_query()
+    complete_information(repository)
 
-    # Query events and extract ordinality
-    extractor = OrdinalExtractor()
-    records = extractor.query_extract_ordinal_from_events()
-    extractor.dump_events_with_ordinality(records)
+    completed_events = [
+        repository.get_event_by_qid(qid=qid, patched=True)
+        for qid in repository.events_by_qid.keys()
+    ]
+    completed_series = [
+        repository.get_event_series_by_qid(qid=qid, patched=True)
+        for qid in repository.event_series_by_qid.keys()
+    ]
 
     # Extract full matches
-    utility = Utility()
-    event_extractor = EventExtractor()
-    matcher = Matcher()
-    full_matcher = FullMatch(utility, event_extractor, matcher)
-    full_matcher.match(records)
+    for full_match in full_matches(completed_events, completed_series):
+        repository.completion_cache.add_match(full_match)
 
     # Use case scenario 1
     series_completion = SeriesCompletion()
     event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
 
-    # nlp matches
-    nlp_matcher = NlpMatcher(event_extractor, matcher)
-    nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())
+    # nlp matches FIXME
+    #nlp_matcher = NlpMatcher(event_extractor, matcher)
+    #nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())

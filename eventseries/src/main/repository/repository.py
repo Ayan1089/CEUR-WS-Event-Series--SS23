@@ -32,6 +32,9 @@ class Repository:
         self.proceeding_by_qid: Dict[QID, WikiDataProceeding] = {
             item.qid: item for item in self.query_manager.wikidata_all_proceedings()
         }
+        self.proceeding_by_event_qid: Dict[QID, WikiDataProceeding] = {
+            item.event: item for item in self.proceeding_by_qid.values()
+        }
         self.completion_cache = completion_cache
 
         self._add_type_to_events_and_series()

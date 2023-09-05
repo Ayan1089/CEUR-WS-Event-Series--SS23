@@ -7,10 +7,10 @@ import json
 import unittest
 from pathlib import Path
 
+from eventseries.src.main.parsers.event_extractor import EventExtractor
 from plp.ordinal import Ordinal
 
-from eventseries.src.main.completeSeries.series_completion import SeriesCompletion
-from eventseries.src.main.parsers.event_extractor import EventExtractor
+from eventseries.src.main.completion.series_completion import SeriesCompletion
 from eventseries.src.main.query.query_events import WikidataEvents
 
 

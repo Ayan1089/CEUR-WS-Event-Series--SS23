@@ -1,6 +1,6 @@
 from typing import Dict, Set
 
-from eventseries.src.main.completeSeries.check_annual_proceeding import (
+from eventseries.src.main.completion.check_annual_proceeding import (
     CheckAnnualProceeding,
 )
 from eventseries.src.main.query.query_proceedings import WikidataEventsProceedings

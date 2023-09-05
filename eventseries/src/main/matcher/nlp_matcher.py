@@ -6,17 +6,14 @@ from typing import List
 import pandas as pd
 
 from eventseries.src.main.dblp import matching
-from eventseries.src.main.dblp.parsing import load_event_series
 from eventseries.src.main.matcher.acronym_matcher import AcronymMatch
 from eventseries.src.main.matcher.match import Match
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
 from eventseries.src.main.matcher.phrase_matcher import PhraseMatch
 from eventseries.src.main.matcher.tfidf_matcher import TfIdfMatch
 from eventseries.src.main.matcher.wikidata_matcher import Matcher
-from eventseries.src.main.parsers.event_extractor import EventExtractor
 from eventseries.src.main.util.fetch_miscellaneous_event_series import FetchEventSeries
 from eventseries.src.main.util.record_attributes import LABEL, SERIES, TITLE
-from eventseries.src.main.util.utility import Utility
 
 
 class NlpMatcher:
