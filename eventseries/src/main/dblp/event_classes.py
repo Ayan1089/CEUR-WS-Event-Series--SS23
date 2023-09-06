@@ -4,7 +4,7 @@ from typing import List, Optional
 from eventseries.src.main.dblp.venue_information import VenueInformation
 
 
-@dataclass
+@dataclass(frozen=True)
 class Event:
     """An event that is mentioned in a EventSeries."""
 
@@ -14,12 +14,15 @@ class Event:
     ordinal: Optional[str]
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class DblpEvent(Event):
     dblp_id: str
 
+    def __hash__(self) -> int:
+        return hash(self.dblp_id)
 
-@dataclass
+
+@dataclass(eq=True, frozen=True)
 class DblpEventSeries:
     dblp_id: str
     name: str
