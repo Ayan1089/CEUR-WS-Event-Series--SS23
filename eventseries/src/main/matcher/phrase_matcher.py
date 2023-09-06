@@ -22,6 +22,7 @@ class PhraseMatch:
         # Only run nlp.make_doc to speed things up
         self.matches_df = matches_df
         self.matches_df.dropna(inplace=True)
+        self.recall = 0
         series_titles = matches_df["event_series"].tolist()
         patterns = [self.nlp.make_doc(text) for text in series_titles]
         self.event_titles = matches_df["event"].tolist()
@@ -64,6 +65,7 @@ class PhraseMatch:
         precision = true_positives / (true_positives + false_positives)
         print("Precision: ", precision)
         recall = true_positives / (true_positives + false_negatives)
+        self.recall = recall
         print("Recall: ", recall)
         f1_score = 2 * (precision * recall) / (precision + recall)
         print("F1-Score: ", f1_score)
@@ -71,27 +73,57 @@ class PhraseMatch:
         # print("Number of containment matches from event titles: ", len(matching_events))
 
     def wikidata_match(
-        self, event_titles: List[str], series_titles: List[str]
-    ) -> List[str]:
+        self, events_df: pd.DataFrame, event_series_df: pd.DataFrame
+    ) -> pd.DataFrame:
+        if self.recall == 1:
+            print("Model is overfitting, and cannot be used")
+            return pd.DataFrame()
+        event_titles = events_df["title"].tolist()
+        series_titles = event_series_df["title"].tolist()
+
         nlp = spacy.load("en_core_web_sm")
         patterns = [nlp.make_doc(text) for text in series_titles]
         phrase_matcher = spacy.matcher.PhraseMatcher(nlp.vocab)
         phrase_matcher.add("Event_EventSeries_Matcher", patterns)
 
         matching_events = []
+        matching_events_ids = []
         series_distinct = []
-        for event in event_titles:
-            doc = nlp(event)
+        matching_series = []
+        matching_series_ids = []
+
+        # for event in event_titles:
+        #     doc = nlp(event)
+        #     matches = phrase_matcher(doc)
+        #     for match_id, start, end in matches:
+        #         span = doc[start:end]
+        #         if event not in matching_events:
+        #             matching_events.append(event)
+        #             matching_series.append(span.text)
+        #         if span.text not in series_distinct:
+        #             series_distinct.append(span.text)
+
+        for i in range(0, len(events_df["title"])):
+            doc = nlp(events_df.loc[i, "title"])
             matches = phrase_matcher(doc)
             for match_id, start, end in matches:
                 span = doc[start:end]
-                if event not in matching_events:
-                    matching_events.append(event)
+                if events_df.loc[i, "title"] not in matching_events:
+                    matching_events.append(events_df.loc[i, "title"])
+                    matching_events_ids.append(events_df.loc[i, "event_id"])
+                    matching_series.append(span.text)
+
                 if span.text not in series_distinct:
                     series_distinct.append(span.text)
+
+        for series in matching_series:
+            series_row = event_series_df[event_series_df["title"] == series]
+            matching_series_ids.append(event_series_df.loc[series_row.index[0], "series_id"])
         #         print(f"Series: '{span.text}' Event: '{event}'")
+
+        results_df = pd.DataFrame({"event_title": matching_events, "event_id": matching_events_ids, "series_title": matching_series, "series_id": matching_series_ids})
         print(
             "Number of containment matches from event titles in Wikidata: ",
             len(matching_events),
         )
-        return matching_events
+        return results_df

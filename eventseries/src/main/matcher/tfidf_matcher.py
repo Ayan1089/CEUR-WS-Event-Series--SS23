@@ -15,6 +15,7 @@ class TfIdfMatch:
         self.event_titles = matches_df["event"].tolist()
         self.best_threshold = -1
         self.best_f1_score = -1
+        self.recall = 0
 
     def matcher(self):
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
@@ -91,6 +92,7 @@ class TfIdfMatch:
             precision = true_positives / (true_positives + false_positives)
             # print("Precision: ", precision)
             recall = true_positives / (true_positives + false_negatives)
+            self.recall = recall
             # print("Recall: ", recall)
             f1_score = 2 * (precision * recall) / (precision + recall)
             if f1_score > self.best_f1_score:
@@ -104,18 +106,17 @@ class TfIdfMatch:
 
     def wikidata_match(
         self,
-        existing_matches: List[str],
-        event_titles: List[str],
-        series_titles: List[str],
-    ) -> List[str]:
-        event_titles = [
-            event for event in event_titles if event not in existing_matches
-        ]
+        events_df: pd.DataFrame,
+        series_df: pd.DataFrame,
+    ) -> pd.DataFrame:
+        if self.recall == 1:
+            print("Model is overfitting, and cannot be used")
+            return pd.DataFrame()
 
         vectorizer = TfidfVectorizer(stop_words=list(text.ENGLISH_STOP_WORDS))
-        array1_strings = event_titles
-        array2_strings = series_titles
-        tfidf_matrix = vectorizer.fit_transform(event_titles + series_titles)
+        array1_strings = events_df["title"]
+        array2_strings = series_df["title"]
+        tfidf_matrix = vectorizer.fit_transform(events_df["title"].tolist() + series_df["title"].tolist())
 
         # Calculate cosine similarity between array1 and array2
         similarity_matrix = cosine_similarity(
@@ -129,6 +130,9 @@ class TfIdfMatch:
         matches = np.argwhere(similarity_matrix >= threshold)
 
         partially_matched_events = []
+        partially_matched_events_ids = []
+        partially_matched_series = []
+        partially_matched_series_ids = []
         # Print partial matches
         for match in matches:
             array1_index = match[0]
@@ -140,5 +144,12 @@ class TfIdfMatch:
             #     series_distinct.append(series)
             #     print()
             partially_matched_events.append(array1_strings[array1_index])
+            partially_matched_events_ids.append(events_df.loc[array1_index, "event_id"])
+            partially_matched_series.append(array2_strings[array2_index])
+            partially_matched_series_ids.append(series_df.loc[array2_index, "series_id"])
+        results_df = pd.DataFrame(
+            {"event_title": partially_matched_events, "event_id": partially_matched_events_ids,
+             "series_title": partially_matched_series,
+             "series_id": partially_matched_series_ids})
         print("Number of partial matches from Tf-Idf: ", len(partially_matched_events))
-        return partially_matched_events
+        return results_df

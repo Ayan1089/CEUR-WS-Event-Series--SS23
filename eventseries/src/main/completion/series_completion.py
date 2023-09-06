@@ -1,4 +1,4 @@
-from typing import Dict, Set
+from typing import Dict, Set, List
 
 from eventseries.src.main.completion.check_annual_proceeding import (
     CheckAnnualProceeding,
@@ -7,6 +7,10 @@ from eventseries.src.main.query.query_proceedings import WikidataEventsProceedin
 
 
 class SeriesCompletion:
+
+    def __init__(self) -> None:
+        self.annual_proceedings = list()
+
     def get_event_series_from_ceur_ws_proceedings(self) -> Set:
         # TODO: Check the fastest way to retrieve the CEUR-WS proccedings
         events_dict = self.extract_proceedings_titles()
@@ -17,20 +21,22 @@ class SeriesCompletion:
         """
         event_series = list()
         annual_proceeding = CheckAnnualProceeding()
-        annual_proceedings = list()
         for event in events_dict:
             if "proceedingTitle" in event and annual_proceeding.is_proceeding_annual(
-                event["proceedingTitle"]
+                    event["proceedingTitle"]
             ):
-                annual_proceedings.append(event)
-        print(f"\nFound proceedings with `annual` synonyms : ", len(annual_proceedings))
-        for event in annual_proceedings:
+                self.annual_proceedings.append(event)
+        print(f"\nFound proceedings with `annual` synonyms : ", len(self.annual_proceedings))
+        for event in self.annual_proceedings:
             if "series" in event:
                 event_series.append(event["series"])
         set_event_series = set(event_series)
         print(f"Unique series found in wikidata: ", len(set_event_series))
         print()
         return set_event_series
+
+    def get_annual_proceedings(self) -> List[str]:
+        return self.annual_proceedings
 
     def extract_proceedings_titles(self) -> Dict:
         events = WikidataEventsProceedings()

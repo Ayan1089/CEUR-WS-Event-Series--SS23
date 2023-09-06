@@ -72,15 +72,15 @@ if __name__ == "__main__":
     )
 
     # Extract full matches
-    found_full_matches = full_matches(completed_events, completed_series)
-    for full_match in found_full_matches:
-        repository.completion_cache.add_match(full_match)
-    logging.info("Found %s matches using full_matches.", len(found_full_matches))
+    utility = Utility()
+    event_extractor = EventExtractor()
+    matcher = Matcher()
+    full_matcher = FullMatch(utility, event_extractor, matcher)
+    full_matcher.match(records)
 
-    #
-    ## Use case scenario 1
-    # series_completion = SeriesCompletion()
-    # event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
+    # Use case scenario 1
+    series_completion = SeriesCompletion()
+    event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
 
     # nlp matches FIXME
     # nlp_matcher = NlpMatcher(event_extractor, matcher)

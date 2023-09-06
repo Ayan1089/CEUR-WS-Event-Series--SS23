@@ -45,6 +45,7 @@ class Cache:
             with open(filename, "rb") as file:
                 volume_cache = pickle.load(file)
         except (FileNotFoundError, pickle.UnpicklingError):
+            volume_cache = []
             pass
         if len(volume_cache) < len(self.absent_volume_cache):
             with open(filename, "wb") as file:
