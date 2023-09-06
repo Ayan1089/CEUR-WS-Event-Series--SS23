@@ -30,6 +30,7 @@ class DblpContext:
         cache_file_path: Path = ires.files("eventseries.src.main") / "resources" / "dblp" / "conf",
         load_cache: bool = True,
         store_on_delete: bool = False,
+        dblp_timeout_ns: int = 500_000_000  # half a second in nanoseconds
     ) -> None:
         if (
             dblp_base is None
@@ -53,6 +54,8 @@ class DblpContext:
         self.store_on_delete: bool = store_on_delete
         self.dblp_conf_path: Path = cache_file_path
         self.dblp_base_path: Path = cache_file_path.parent
+        self.dblp_timeout_ns: int = dblp_timeout_ns
+        self.last_request_time_ns: Optional[int] = None  # Time in ns at last request to dblp
         if load_cache:
             self.load_cache()
 
@@ -142,16 +145,20 @@ class DblpContext:
                     f"dblp_file_path = {hasattr(self, 'dblp_file_path')}"
                 )
 
-    @staticmethod
-    def request_dblp(dblp_url: str, retry: bool = True) -> str:
+    def request_dblp(self, dblp_url: str, retry: bool = True, ignore_timeout: bool = False) -> str:
+        if self.last_request_time_ns is not None and not ignore_timeout:
+            diff = time.time_ns() - self.last_request_time_ns
+            if diff < self.dblp_timeout_ns:
+                time.sleep(diff / 1e9)  # nanoseconds remaining converted to seconds
         response = requests.get(dblp_url, timeout=120)  # wait to minutes max
+        self.last_request_time_ns = time.time_ns()
         if response.status_code == 429:
             retry_time = response.headers.get("Retry-After")
             error_msg = "Too many requests to dblp.org"
             if retry and retry_time is not None:
                 print(f"{error_msg} Waiting for {retry_time}s before retrying.")
                 time.sleep(int(retry_time))
-                return DblpContext.request_dblp(dblp_url, retry)
+                return self.request_dblp(dblp_url, retry, ignore_timeout=ignore_timeout)
             # failed request without retrying
             raise ValueError(error_msg)
         if response.status_code != 200:
@@ -173,7 +180,7 @@ class DblpContext:
         ):
             return self.get_cached(dblp_db_entry)
         # Couldn't find id in cache -> requesting it:
-        response_text = DblpContext.request_dblp(dblp_url=self.base_url + dblp_db_entry, **kwargs)
+        response_text = self.request_dblp(dblp_url=self.base_url + dblp_db_entry, **kwargs)
         if wait_time is not None and wait_time > 0.0:  # Avoid DDOSing dblp
             time.sleep(wait_time)
         if not ignore_cache:

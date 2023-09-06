@@ -152,7 +152,7 @@ class TestDblpContext(unittest.TestCase):
         mock_get.return_value = mock_response
 
         url = "https://dblp.org/db/conf/test"
-        response_text = DblpContext.request_dblp(url)
+        response_text = self.dblp_context.request_dblp(url)
         self.assertEqual(response_text, mock_response.text)
 
     @patch("requests.get")
@@ -163,7 +163,7 @@ class TestDblpContext(unittest.TestCase):
 
         url = "https://dblp.org/db/conf/test"
         with self.assertRaises(ValueError):
-            DblpContext.request_dblp(url, retry=False)
+            self.dblp_context.request_dblp(url, retry=False)
 
     @patch("time.sleep")
     @patch("requests.get")
@@ -182,7 +182,7 @@ class TestDblpContext(unittest.TestCase):
         mock_get.side_effect = [mock_response_429, mock_response_200]
 
         url = "https://dblp.org/db/conf/test"
-        response_text = self.dblp_context.request_dblp(url, retry=True)
+        response_text = self.dblp_context.request_dblp(url, retry=True, ignore_timeout=True)
 
         self.assertEqual(response_text, mock_response_200.text)
         mock_get.assert_called_with(url, timeout=120)
