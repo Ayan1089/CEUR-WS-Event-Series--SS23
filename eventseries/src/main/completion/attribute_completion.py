@@ -6,7 +6,37 @@ from bs4 import BeautifulSoup
 from plp.ordinal import Ordinal
 
 from eventseries.src.main.repository.completions import WithOrdinal, WithCeurWsTitle
+from eventseries.src.main.repository.repository import Repository
 from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataProceeding
+
+
+def complete_information(repo: Repository):
+    events: List[WikiDataEvent] = list(repo.events_by_qid.values())
+    proceedings: List[WikiDataProceeding] = list(repo.proceeding_by_event_qid.values())
+
+    # try to extract the ordinal for events
+    without_ordinal_completion = [
+        event
+        for event in events
+        if not any(
+            isinstance(comp, WithOrdinal)
+            for comp in repo.completion_cache.get_completions_for_qid(event.qid)
+        )
+    ]
+    for ordinal_completion in complete_ordinals(without_ordinal_completion):
+        repo.completion_cache.add_completion(ordinal_completion)
+
+    # add ceurws_title to all proceedings
+    without_ceurws_title_completion = [
+        proceeding
+        for proceeding in proceedings
+        if not any(
+            isinstance(comp, WithCeurWsTitle)
+            for comp in repo.completion_cache.get_completions_for_qid(proceeding.qid)
+        )
+    ]
+    for ceurws_title_completion in complete_ceurws_title(without_ceurws_title_completion):
+        repo.completion_cache.add_completion(ceurws_title_completion)
 
 
 def complete_ordinals(events: List[WikiDataEvent]) -> List[WithOrdinal]:

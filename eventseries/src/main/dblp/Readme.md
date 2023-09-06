@@ -28,6 +28,21 @@
         - `[ordinal] title (/ [ordinal title)* [year] [:location]`
         - However this is also [not consistent](https://dblp.org/db/conf/wlp/index.html)
 
+### Mapping events to event-series
+
+#### Standard Cases
+- There is an additional workshop page for one conference
+  - Usually the id will be the same as the conference with an additional "w" suffix
+  - e.g. [conf/iccbr/iccbr2015](https://dblp.org/db/conf/iccbr/iccbr2015.html)
+    - With [conf/iccbr/iccbr2015w](https://dblp.org/db/conf/iccbr/iccbr2015w.html) being the list of workshops for this conference
+
+#### Special Cases
+- [Workshop](https://dblp.org/db/conf/birws/birws2021.html) has two series listed in breadcrumbs
+    - The name of one is BIR but the dblp-id links to ["conf/birws"](https://dblp.org/db/conf/birws/index.html)
+        - ["conf/bir"](https://dblp.org/db/conf/bir/index.html) would lead to the conference series
+    - The title contains the "@" pattern "BIR@ECIR"
+    - Following the id constructed form the "@" pattern would lead to the wrong series
+
 ### Known Issues
 
 - Meta "event series"

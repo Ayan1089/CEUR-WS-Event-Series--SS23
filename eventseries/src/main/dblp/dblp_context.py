@@ -19,6 +19,14 @@ def is_likely_dblp_event_series(dblp_event_series_id: str) -> bool:
     return is_likely_dblp_id(dblp_id=dblp_event_series_id) and dblp_event_series_id.count("/") == 1
 
 
+def get_dblp_id_from_url(dblp_url: str) -> str:
+    return (
+        dblp_url.removeprefix("https://dblp.org/db/")
+        .removesuffix("/index.html")
+        .removesuffix(".html")
+    )
+
+
 class DblpContext:
     """Encapsulates access to dblp events and event-series.
     Accessed sites are cached and can be accessed later.
@@ -30,7 +38,7 @@ class DblpContext:
         cache_file_path: Path = ires.files("eventseries.src.main") / "resources" / "dblp" / "conf",
         load_cache: bool = True,
         store_on_delete: bool = False,
-        dblp_timeout_ns: int = 500_000_000  # half a second in nanoseconds
+        dblp_timeout_ns: int = 1_000_000_000,  # half a second in nanoseconds
     ) -> None:
         if (
             dblp_base is None

@@ -13,7 +13,7 @@ def _event_matches_series(event: WikiDataEvent, event_series: WikiDataEventSerie
     match_targets = (
         [event_series.label, event_series.title]
         if event_series.title is not None
-        else [event_series.title]
+        else [event_series.label]
     )
     return _is_string_in(string_list, match_targets)
 
