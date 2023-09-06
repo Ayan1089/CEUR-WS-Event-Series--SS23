@@ -103,7 +103,13 @@ def dblp_event_from_tag(headline: Tag, given_dblp_id: Optional[str] = None) -> D
         if given_dblp_id is None
         else given_dblp_id
     )
-    event = event_from_title(headline.find("h1").string)
+    event_title = headline.find("h1").string
+    if event_title is None:
+        strings: List = list(headline.find().strings)
+        if len(strings) == 0:
+            print("Could not identify title of event: " + str(headline.find("h1")))
+        event_title = " ".join(strings)
+    event = event_from_title(event_title)
     return DblpEvent(dblp_id=dblp_id, **event.__dict__)
 
 
@@ -178,7 +184,8 @@ def event_series_from_soup(soup: BeautifulSoup,
                            given_dblp_id: Optional[str] = None) -> DblpEventSeries:
     if not EventSeriesParser.is_event_series(soup):
         raise ValueError(
-            "Soup parameter is probably not representing an event series " + str(soup)
+            "Soup parameter is probably not representing an event series " + str(soup) +
+            "For given dblp id: " + str(given_dblp_id)
         )
     header = soup.find("header", {"id": "headline"})
 
