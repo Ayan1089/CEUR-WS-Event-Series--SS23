@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, date
 from typing import Optional, Union
 
+from eventseries.src.main.dblp.event_classes import DblpEventSeries
 from eventseries.src.main.repository.wikidata_dataclasses import (
     WikiDataEventSeries,
     WikiDataEvent,
@@ -16,9 +17,24 @@ from eventseries.src.main.repository.wikidata_dataclasses import (
 
 @dataclass
 class Match:
-    series: WikiDataEventSeries
     event: WikiDataEvent
     found_by: str
+    series: Union[WikiDataEventSeries, DblpEventSeries, str]
+
+
+@dataclass
+class FullMatch(Match):
+    series: WikiDataEventSeries
+
+
+@dataclass
+class NameMatch(Match):
+    series: str
+
+
+@dataclass
+class DblpMatch(Match):
+    series: DblpEventSeries
 
 
 @dataclass

@@ -1,8 +1,8 @@
-from typing import Dict
+from typing import Dict, List
 
 from eventseries.src.main.dblp.event_classes import DblpEvent, DblpEventSeries
 from eventseries.src.main.repository.completion_cache import CompletionCache
-from eventseries.src.main.repository.completions import Match
+from eventseries.src.main.repository.completions import FullMatch
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.wikidata_dataclasses import (
     QID,
@@ -74,11 +74,11 @@ class Repository:
         return self.dblp_repo.get_or_load_event_series(dblp_id)
 
 
-    def get_matches(self) -> list[Match]:
+    def get_matches(self) -> list[FullMatch]:
         return self.completion_cache.get_all_matches()
 
 
-    def events_without_series(self, ignore_match_completions: bool = False):
+    def events_without_series(self, ignore_match_completions: bool = False) -> List[WikiDataEvent]:
         events_without_series = [
             event for event in self.events_by_qid.values() if event.part_of_series is None
         ]

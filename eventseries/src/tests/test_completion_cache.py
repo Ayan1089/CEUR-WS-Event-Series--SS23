@@ -4,7 +4,7 @@ from typing import Dict, List
 from unittest import TestCase
 
 from eventseries.src.main.repository.completion_cache import CompletionCache
-from eventseries.src.main.repository.completions import WithAcronym, WithOrdinal, Match
+from eventseries.src.main.repository.completions import WithAcronym, WithOrdinal, FullMatch
 from eventseries.src.main.repository.wikidata_dataclasses import (
     QID,
     WikiDataEvent,
@@ -20,7 +20,7 @@ class TestCompletionCache(TestCase):
             resource_dir=self.temp_path, load_on_init=True, store_on_delete=True
         )
         self.with_acronym = WithAcronym(qid=QID("Q123"), acronym="test", found_by="TestAlgo")
-        self.match = Match(
+        self.match = FullMatch(
             series=WikiDataEventSeries(qid=QID("Q100"), label="TestSeries"),
             event=WikiDataEvent(qid=QID("Q100"), label="TestEvent"),
             found_by="TestAlgo",
@@ -53,7 +53,7 @@ class TestCompletionCache(TestCase):
     matches = self.completion_cache.get_all_matches()
     self.assertIsInstance(matches, List)
     self.assertEqual(1, len(matches))
-    self.assertIsInstance(matches[0], Match)
+    self.assertIsInstance(matches[0], FullMatch)
     self.assertEqual(self.match, matches[0])
 
     def test_get_matches_by_source(self):

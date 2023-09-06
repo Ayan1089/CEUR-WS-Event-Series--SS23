@@ -1,6 +1,6 @@
 from typing import List
 
-from eventseries.src.main.repository.completions import Match
+from eventseries.src.main.repository.completions import FullMatch
 from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataEventSeries
 
 
@@ -20,12 +20,12 @@ def _event_matches_series(event: WikiDataEvent, event_series: WikiDataEventSerie
 
 def full_matches(
     events: List[WikiDataEvent], event_series: List[WikiDataEventSeries]
-) -> List[Match]:
+) -> List[FullMatch]:
     # Remove the events that already have a series assigned
     matches = []
     for event in events:
         for series in event_series:
             if _event_matches_series(event, series):
-                matches.append(Match(event=event, series=series, found_by="FullMatch"))
+                matches.append(FullMatch(event=event, series=series, found_by="FullMatch"))
 
     return matches

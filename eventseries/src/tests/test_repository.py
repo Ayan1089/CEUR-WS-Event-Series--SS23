@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from eventseries.src.main.dblp.dblp_context import DblpContext
 from eventseries.src.main.repository.completion_cache import CompletionCache
-from eventseries.src.main.repository.completions import WithAcronym, Match
+from eventseries.src.main.repository.completions import WithAcronym, FullMatch
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.repository import Repository
 from eventseries.src.main.repository.wikidata_dataclasses import (
@@ -104,7 +104,7 @@ class TestRepository(TestCase):
         event = self.repo.get_event_by_qid(QID("Q106245681"))
 
         series = self.repo.get_event_series_by_qid(QID("Q105698882"))
-        self.repo.completion_cache.add_match(Match(event=event, series=series, found_by="Wikidata"))
+        self.repo.completion_cache.add_match(FullMatch(event=event, series=series, found_by="Wikidata"))
 
     def test_add_type_to_events_and_series(self):
         # As there are some events which are classified both conferences and workshops only
