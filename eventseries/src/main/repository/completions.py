@@ -3,7 +3,7 @@ import dataclasses
 import json
 from dataclasses import dataclass
 from datetime import datetime, date
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 from eventseries.src.main.dblp.event_classes import DblpEventSeries
 from eventseries.src.main.repository.wikidata_dataclasses import (
@@ -35,6 +35,25 @@ class NameMatch(Match):
 @dataclass
 class DblpMatch(Match):
     series: DblpEventSeries
+
+
+def get_titles_from_match(match: Match) -> Tuple[str, str]:
+    """
+    Return the titles of the event and series.
+    :param match: A FullMatch, NameMatch or DBlpMatch of which the titles should be extracted.
+    :return: A tuple of (event_title,series_title).
+    """
+    event_title = match.event.title
+    series_title = ""
+    if isinstance(match, FullMatch):
+        series_title = match.series.title if match.series.title is not None else match.series.label
+    if isinstance(match, DblpMatch):
+        series_title = match.series.name
+    if isinstance(match, NameMatch):
+        series_title = match.series
+    if series_title == "":
+        raise ValueError("Could not get title of series from match: " + str(match))
+    return event_title, series_title
 
 
 @dataclass

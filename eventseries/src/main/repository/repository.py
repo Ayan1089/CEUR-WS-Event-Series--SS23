@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from eventseries.src.main.dblp.event_classes import DblpEvent, DblpEventSeries
 from eventseries.src.main.repository.completion_cache import CompletionCache
-from eventseries.src.main.repository.completions import FullMatch
+from eventseries.src.main.repository.completions import Match
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.wikidata_dataclasses import (
     QID,
@@ -74,7 +74,7 @@ class Repository:
         return self.dblp_repo.get_or_load_event_series(dblp_id)
 
 
-    def get_matches(self) -> list[FullMatch]:
+    def get_matches(self) -> list[Match]:
         return self.completion_cache.get_all_matches()
 
 

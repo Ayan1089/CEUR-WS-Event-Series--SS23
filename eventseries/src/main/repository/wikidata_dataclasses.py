@@ -61,6 +61,14 @@ class WikiDataEventSeries:
     type: WikiDataEventType = WikiDataEventType.UNKNOWN
 
 
+def get_title_else_label(item) -> str:
+    if hasattr(item, "title") and item.title is not None:
+        return item.title
+    if hasattr(item, "label") and item.label is not None:
+        return item.label
+    raise ValueError("Argument had neither title nor label: " + str(item))
+
+
 @dataclass
 class WikiDataProceeding:
     volume_number: int

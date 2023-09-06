@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Dict
 
 from eventseries.src.main.repository.cached_online_context import CachedContext
-from eventseries.src.main.repository.completions import FullMatch, WikidataItemCompletion
+from eventseries.src.main.repository.completions import FullMatch, WikidataItemCompletion, Match
 from eventseries.src.main.repository.wikidata_dataclasses import QID
 
 
@@ -55,7 +55,7 @@ class CompletionCache(CachedContext):
         else:
             completions[completion.qid] = [completion]
 
-    def get_all_matches(self) -> List[FullMatch]:
+    def get_all_matches(self) -> List[Match]:
         """Return a copy of all matches stored by this cache."""
         return self.matches.copy()
 
@@ -64,6 +64,6 @@ class CompletionCache(CachedContext):
         This allows to group the matches by which algorithm claimed it."""
         return {match.found_by: match for match in self.get_all_matches()}
 
-    def add_match(self, match: FullMatch):
+    def add_match(self, match: Match):
         """Add a match to this cache. NOTE: There is no check for duplicates."""
         self.cache[CompletionCache.MATCHES].append(match)
