@@ -8,8 +8,11 @@ import logging
 
 from eventseries.src.main.completion.attribute_completion import complete_information
 from eventseries.src.main.dblp.dblp_context import DblpContext
+from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
 from eventseries.src.main.matcher.full_matcher import full_matches
+from eventseries.src.main.matcher.ngram_matcher import NgramMatch
+from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset
 from eventseries.src.main.repository.completion_cache import CompletionCache
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.repository import Repository
@@ -45,9 +48,8 @@ if __name__ == "__main__":
 
     fix_known_errors(repository)
 
-    # scrape_wikidata_with_dblp_id(repository)
+    scrape_wikidata_with_dblp_id(repository)
 
-    # scrape_dblp(repository)
     complete_information(repository)
 
     completed_events = [
@@ -70,17 +72,23 @@ if __name__ == "__main__":
     logging.info(
         "Out of which %s were conferences and %s workshops", conference_matches, workshop_matches
     )
+    matched_events = set(match.event.qid for match in matches)
+
+    unmatched_events = [event for event in to_be_completed if event.qid not in matched_events]
+
+    training_set = create_training_test_dataset(repository.get_matches())
+    ngram_matcher = NgramMatch(matches_df=training_set)
+    ngram_matches = ngram_matcher.match_events_to_series(
+        event_list=unmatched_events, series_list=completed_series
+    )
+    logging.info("Found %s matched through n-grams.", len(ngram_matches))
 
     # Extract full matches
-    utility = Utility()
-    event_extractor = EventExtractor()
-    matcher = Matcher()
-    full_matcher = FullMatch(utility, event_extractor, matcher)
-    full_matcher.match(records)
+    full_matches = full_matches(events=unmatched_events, event_series=completed_series)
 
     # Use case scenario 1
-    series_completion = SeriesCompletion()
-    event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
+    # series_completion = SeriesCompletion()
+    # event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
 
     # nlp matches FIXME
     # nlp_matcher = NlpMatcher(event_extractor, matcher)
