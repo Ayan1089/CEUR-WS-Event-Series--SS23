@@ -7,22 +7,36 @@ import requests
 import validators
 
 
+def is_likely_dblp_id(dblp_id: str) -> bool:
+    return isinstance(dblp_id, str) and dblp_id.startswith("conf/")
+
+
+def is_likely_dblp_event(dblp_event_id: str) -> bool:
+    return is_likely_dblp_id(dblp_id=dblp_event_id) and dblp_event_id.count("/") == 2
+
+
+def is_likely_dblp_event_series(dblp_event_series_id: str) -> bool:
+    return is_likely_dblp_id(dblp_id=dblp_event_series_id) and dblp_event_series_id.count("/") == 1
+
+
 class DblpContext:
     """Encapsulates access to dblp events and event-series.
     Accessed sites are cached and can be accessed later.
     Everything is indexed based on the dblp-id (e.g. conf/aaai/affcon2019)."""
 
     def __init__(
-            self,
-            dblp_base: str = "https://dblp.org/db/",
-            cache_file_path: Path = ires.files(
-                "eventseries.src.main") / "resources" / "dblp" / "conf",
-            load_cache: bool = True,
-            store_on_delete: bool = False,
+        self,
+        dblp_base: str = "https://dblp.org/db/",
+        cache_file_path: Path = ires.files("eventseries.src.main") / "resources" / "dblp" / "conf",
+        load_cache: bool = True,
+        store_on_delete: bool = False,
     ) -> None:
-
-        if dblp_base is None or cache_file_path is None \
-                or load_cache is None or store_on_delete is None:
+        if (
+            dblp_base is None
+            or cache_file_path is None
+            or load_cache is None
+            or store_on_delete is None
+        ):
             raise ValueError("At least one parameter was None")
         if not validators.url(dblp_base):
             raise ValueError("dblp_base must be a valid url")
@@ -85,7 +99,7 @@ class DblpContext:
         if not self.dblp_conf_path.is_dir() or not self.dblp_conf_path.exists():
             print(
                 f"Either {str(self.dblp_conf_path)} doesnt exist or is not a directory."
-                f" Creating empty dict."
+                " Creating empty dict."
             )
             if self.dblp_cache is None:
                 self.dblp_cache = {}
@@ -123,7 +137,7 @@ class DblpContext:
                 self.store_cache()
             else:
                 print(
-                    f"Failed to store cache. Did not found attribute: "
+                    "Failed to store cache. Did not found attribute: "
                     f"dblp_cache = {hasattr(self, 'dblp_cache')} "
                     f"dblp_file_path = {hasattr(self, 'dblp_file_path')}"
                 )
@@ -141,29 +155,25 @@ class DblpContext:
             # failed request without retrying
             raise ValueError(error_msg)
         if response.status_code != 200:
-            raise ValueError(
-                f"Failed to request {dblp_url} with code {response.status_code}."
-            )
+            raise ValueError(f"Failed to request {dblp_url} with code {response.status_code}.")
 
         return response.text
 
     def request_or_load_dblp(
-            self,
-            dblp_db_entry: str,
-            ignore_cache: bool = False,
-            wait_time: Optional[float] = None,
-            **kwargs,
+        self,
+        dblp_db_entry: str,
+        ignore_cache: bool = False,
+        wait_time: Optional[float] = None,
+        **kwargs,
     ):
         if (
-                not ignore_cache
-                and self.is_cached(dblp_db_entry)
-                and self.get_cached(dblp_db_entry) != ""
+            not ignore_cache
+            and self.is_cached(dblp_db_entry)
+            and self.get_cached(dblp_db_entry) != ""
         ):
             return self.get_cached(dblp_db_entry)
         # Couldn't find id in cache -> requesting it:
-        response_text = DblpContext.request_dblp(
-            dblp_url=self.base_url + dblp_db_entry, **kwargs
-        )
+        response_text = DblpContext.request_dblp(dblp_url=self.base_url + dblp_db_entry, **kwargs)
         if wait_time is not None and wait_time > 0.0:  # Avoid DDOSing dblp
             time.sleep(wait_time)
         if not ignore_cache:
@@ -171,11 +181,7 @@ class DblpContext:
         return response_text
 
     def get_cached_series_keys(self) -> List[str]:
-        return [
-            key
-            for key in self.dblp_cache
-            if key.count("/") == 1 and key.startswith("conf/")
-        ]
+        return [key for key in self.dblp_cache if is_likely_dblp_event_series(key)]
 
     def get_events_for_series(self, series_id: str) -> List[str]:
         """
@@ -185,10 +191,14 @@ class DblpContext:
         :raises ValueError if the series_id is not part of the cache.
         """
         self._assert_is_cached(series_id)
-        return [key for key in self.dblp_cache if key.startswith(series_id) and key.count("/") > 1]
+        return [
+            key
+            for key in self.dblp_cache
+            if is_likely_dblp_event(key) and key.startswith(series_id)
+        ]
 
     def get_series_with_events(
-            self, series_ids: Optional[List[str]] = None
+        self, series_ids: Optional[List[str]] = None
     ) -> Dict[str, List[str]]:
         """
         Map every id in series_ids to all events that are part of the series.
@@ -197,7 +207,5 @@ class DblpContext:
         If none all cached series ids will be used.
         :return: Every series_id to a list of event_id's that have the series as prefix.
         """
-        series_keys = (
-            self.get_cached_series_keys() if series_ids is None else series_ids
-        )
+        series_keys = self.get_cached_series_keys() if series_ids is None else series_ids
         return {key: self.get_events_for_series(key) for key in series_keys}
