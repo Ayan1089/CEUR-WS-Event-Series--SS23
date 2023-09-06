@@ -18,11 +18,11 @@ class CachedContext(Generic[T]):
         if load_on_init is None or store_on_delete is None:
             raise ValueError("At least one parameter was None.")
         if not isinstance(self.resource_dir, Path):
-            raise TypeError("resource_dir must be a Path object")
+            raise TypeError("resource_dir must be a Path object but was " + str(type(resource_dir)))
         if not self.resource_dir.exists():
-            raise ValueError("resource_dir does not exist")
+            raise ValueError("resource_dir does not exist: " + str(resource_dir))
         if not resource_dir.is_dir():
-            raise ValueError("resource_dir must be a directory")
+            raise ValueError("resource_dir must be a directory" + str(resource_dir))
 
         if load_on_init:
             self.load_cached()
