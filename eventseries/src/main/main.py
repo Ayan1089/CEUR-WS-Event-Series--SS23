@@ -6,13 +6,15 @@ Created on 2023-05-03
 import importlib.resources as ires
 import logging
 
+import spacy
+
 from eventseries.src.main.completion.attribute_completion import complete_information
 from eventseries.src.main.dblp.dblp_context import DblpContext
 from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
-from eventseries.src.main.matcher.full_matcher import full_matches
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
 from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset
+from eventseries.src.main.matcher.phrase_matcher import PhraseMatch
 from eventseries.src.main.repository.completion_cache import CompletionCache
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.repository import Repository
@@ -26,6 +28,16 @@ def fix_known_errors(repo: Repository):
     if gvd_workshop_32 is None:
         return
     gvd_workshop_32.dblp_id = "conf/gvd/gvd2021"
+
+
+def spacy_package_exists():
+    if not spacy.util.is_package("en_core_web_sm"):
+        logging.error(
+            "Could not find spacy package 'en_core_web_sm' please run"
+            " 'python -m spacy download en_core_web_sm'"
+        )
+        return False
+    return True
 
 
 if __name__ == "__main__":
@@ -83,8 +95,11 @@ if __name__ == "__main__":
     )
     logging.info("Found %s matched through n-grams.", len(ngram_matches))
 
-    # Extract full matches
-    full_matches = full_matches(events=unmatched_events, event_series=completed_series)
+    # Try phrase matching
+    if spacy_package_exists():
+        phrase_matcher = PhraseMatch(matches_df=training_set)
+        phrase_matches = phrase_matcher.wikidata_match(unmatched_events, completed_series)
+        logging.info("Found %s matched through phrase-matching.", len(phrase_matches))
 
     # Use case scenario 1
     # series_completion = SeriesCompletion()

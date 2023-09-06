@@ -1,8 +1,13 @@
-from typing import List
+import logging
+from typing import List, Set
 
 import pandas as pd
 import spacy
 import spacy.matcher
+
+from eventseries.src.main.repository.completions import Match, FullMatch
+from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataEventSeries, \
+    get_title_else_label, QID
 
 
 # from typing import List
@@ -23,14 +28,14 @@ class PhraseMatch:
         self.matches_df = matches_df
         self.matches_df.dropna(inplace=True)
         self.recall = 0
-        series_titles = matches_df["event_series"].tolist()
+        series_titles = matches_df["series"].tolist()
         patterns = [self.nlp.make_doc(text) for text in series_titles]
         self.event_titles = matches_df["event"].tolist()
         self.phrase_matcher.add("Event_EventSeries_Matcher", patterns)
         # Capturing all the distinct series
         self.series_distinct: List[str] = []
 
-    def matcher(self):
+    def fit(self):
         true_positives = 0
         false_positives = 0
         false_negatives = 0
@@ -47,7 +52,7 @@ class PhraseMatch:
                     self.series_distinct.append(span.text)
                 if (
                     self.matches_df.loc[
-                        self.matches_df["event"] == event, "event_series"
+                        self.matches_df["event"] == event, "series"
                     ].values[0]
                 ) == span.text:
                     true_positives += 1
@@ -61,69 +66,51 @@ class PhraseMatch:
         # print("true positives: ", true_positives)
         # print("false positives: ", false_positives)
         # print("false negatives: ", false_negatives)
-        print(f"\nStatistics from Phrase matching: ")
+        logging.debug("Statistics from Phrase matching: ")
         precision = true_positives / (true_positives + false_positives)
-        print("Precision: ", precision)
+        logging.debug("Precision: %s", precision)
         recall = true_positives / (true_positives + false_negatives)
         self.recall = recall
-        print("Recall: ", recall)
+        logging.debug("Recall: %s", recall)
         f1_score = 2 * (precision * recall) / (precision + recall)
-        print("F1-Score: ", f1_score)
+        logging.debug("F1-Score: %s", f1_score)
 
         # print("Number of containment matches from event titles: ", len(matching_events))
 
     def wikidata_match(
-        self, events_df: pd.DataFrame, event_series_df: pd.DataFrame
-    ) -> pd.DataFrame:
+        self, events:List[WikiDataEvent], event_series: List[WikiDataEventSeries]
+    ) -> List[Match]:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
-            return pd.DataFrame()
-        event_titles = events_df["title"].tolist()
-        series_titles = event_series_df["title"].tolist()
+            return []
+        series_titles_to_series = {get_title_else_label(series): series for series in event_series}
 
         nlp = spacy.load("en_core_web_sm")
-        patterns = [nlp.make_doc(text) for text in series_titles]
+        patterns = [nlp.make_doc(text) for text in series_titles_to_series.keys()]
         phrase_matcher = spacy.matcher.PhraseMatcher(nlp.vocab)
         phrase_matcher.add("Event_EventSeries_Matcher", patterns)
 
-        matching_events = []
-        matching_events_ids = []
-        series_distinct = []
-        matching_series = []
-        matching_series_ids = []
-
-        # for event in event_titles:
-        #     doc = nlp(event)
-        #     matches = phrase_matcher(doc)
-        #     for match_id, start, end in matches:
-        #         span = doc[start:end]
-        #         if event not in matching_events:
-        #             matching_events.append(event)
-        #             matching_series.append(span.text)
-        #         if span.text not in series_distinct:
-        #             series_distinct.append(span.text)
-
-        for i in range(0, len(events_df["title"])):
-            doc = nlp(events_df.loc[i, "title"])
+        found_matches = []
+        matched_events: Set[QID] = set()
+        for event in events:
+            event_title = get_title_else_label(event)
+            doc = nlp(event_title)
             matches = phrase_matcher(doc)
-            for match_id, start, end in matches:
+            for _, start, end in matches:
+                if event.qid in matched_events:
+                    break
                 span = doc[start:end]
-                if events_df.loc[i, "title"] not in matching_events:
-                    matching_events.append(events_df.loc[i, "title"])
-                    matching_events_ids.append(events_df.loc[i, "event_id"])
-                    matching_series.append(span.text)
+                series_from_title = series_titles_to_series.get(span.text)
+                if series_from_title is None:
+                    logging.error("Could not recreate series from span.text %s", span.text)
+                    continue
+                matched_events.add(event.qid)
+                found_matches.append(
+                    FullMatch(
+                        event=event,
+                        series=series_from_title,
+                        found_by="PhraseMatch::wikidata_match"
+                    )
+                )
 
-                if span.text not in series_distinct:
-                    series_distinct.append(span.text)
-
-        for series in matching_series:
-            series_row = event_series_df[event_series_df["title"] == series]
-            matching_series_ids.append(event_series_df.loc[series_row.index[0], "series_id"])
-        #         print(f"Series: '{span.text}' Event: '{event}'")
-
-        results_df = pd.DataFrame({"event_title": matching_events, "event_id": matching_events_ids, "series_title": matching_series, "series_id": matching_series_ids})
-        print(
-            "Number of containment matches from event titles in Wikidata: ",
-            len(matching_events),
-        )
-        return results_df
+        return found_matches

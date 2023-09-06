@@ -36,7 +36,7 @@ class NlpMatcher:
     def match(self, events: List[WikiDataEvent], event_series: List[WikiDataEventSeries]):
 
         phrase_matcher = PhraseMatch(self.train_test_set)
-        phrase_matcher.matcher()
+        phrase_matcher.fit()
         phrase_matches_df = phrase_matcher.wikidata_match(events, event_series)
         phrase_matches_df[TYPE] = "Phrase_matching"
         events_df = (

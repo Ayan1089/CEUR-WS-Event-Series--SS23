@@ -15,7 +15,7 @@ class AcronymMatch:
 
     def matcher(self):
         print(f"\nAcronym matcher stats from existing matches:")
-        self.phrase_matcher.matcher()
+        self.phrase_matcher.fit()
 
     def wikidata_match(
             self,
