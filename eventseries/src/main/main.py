@@ -48,4 +48,6 @@ if __name__ == "__main__":
     results_df = nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())
 
     # Dumping results into a json
-    results_df.to_json("/Users/ayan/Projects/KGLab/main/CEUR-WS-Event-Series--SS23/eventseries/src/main/resources/results.json")
+    resources_path = Path(__file__).resolve().parent / ".." / "resources"
+    final_results_path = os.path.join(resources_path, "results.json")
+    results_df.to_json(final_results_path)
