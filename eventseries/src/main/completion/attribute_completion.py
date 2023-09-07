@@ -1,13 +1,21 @@
+import itertools
+import logging
+import re
 from dataclasses import asdict
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import requests
 from bs4 import BeautifulSoup
 from plp.ordinal import Ordinal
 
-from eventseries.src.main.repository.completions import WithOrdinal, WithCeurWsTitle
+from eventseries.src.main.repository.completions import WithOrdinal, WithCeurWsTitle, WithAcronym
 from eventseries.src.main.repository.repository import Repository
-from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataProceeding
+from eventseries.src.main.repository.wikidata_dataclasses import (
+    WikiDataEvent,
+    WikiDataProceeding,
+    QID,
+    WikiDataEventSeries,
+)
 
 
 def complete_information(repo: Repository):
@@ -16,27 +24,44 @@ def complete_information(repo: Repository):
 
     # try to extract the ordinal for events
     without_ordinal_completion = [
-        event
-        for event in events
-        if not any(
-            isinstance(comp, WithOrdinal)
-            for comp in repo.completion_cache.get_completions_for_qid(event.qid)
-        )
+        event for event in events if _no_completion(event.qid, WithOrdinal, repo)
     ]
     for ordinal_completion in complete_ordinals(without_ordinal_completion):
         repo.completion_cache.add_completion(ordinal_completion)
+
+    complete_acronym_information(repo)
 
     # add ceurws_title to all proceedings
     without_ceurws_title_completion = [
         proceeding
         for proceeding in proceedings
-        if not any(
-            isinstance(comp, WithCeurWsTitle)
-            for comp in repo.completion_cache.get_completions_for_qid(proceeding.qid)
-        )
+        if _no_completion(proceeding.qid, WithCeurWsTitle, repo)
     ]
     for ceurws_title_completion in complete_ceurws_title(without_ceurws_title_completion):
         repo.completion_cache.add_completion(ceurws_title_completion)
+
+
+def complete_acronym_information(repo: Repository):
+    # add acronyms to events and event_series
+    events_and_series = itertools.chain(
+        repo.events_by_qid.values(), repo.event_series_by_qid.values()
+    )
+
+    without_acronym_match = list(
+        filter(lambda item: _no_completion(item.qid, WithAcronym, repo), events_and_series)
+    )
+
+    acronym_completions = complete_acronyms(without_acronym_match)
+    logging.info("Found %s new acronyms for events and series.", len(acronym_completions))
+    for acronym_completion in acronym_completions:
+        repo.completion_cache.add_completion(acronym_completion)
+
+
+def _no_completion(qid: QID, completion_class, repo: Repository):
+    return not any(
+        isinstance(comp, completion_class)
+        for comp in repo.completion_cache.get_completions_for_qid(qid)
+    )
 
 
 def complete_ordinals(events: List[WikiDataEvent]) -> List[WithOrdinal]:
@@ -55,6 +80,28 @@ def complete_ordinals(events: List[WikiDataEvent]) -> List[WithOrdinal]:
                 WithOrdinal(qid=event.qid, ordinal=as_dict["ordinal"], found_by="complete_ordinals")
             )
     return completed_ordinals
+
+
+def complete_acronyms(items: List[Union[WikiDataEvent, WikiDataEventSeries]]) -> List[WithAcronym]:
+    completed_acronyms = []
+    for item in items:
+        if item.acronym is not None:
+            continue
+        label_acronym = extract_acronym(item.label)
+        title_acronym = extract_acronym(item.title) if item.title is not None else None
+        if label_acronym and title_acronym and label_acronym != title_acronym:
+            logging.warning(
+                "Found different acronyms in label (%s) and title (%s): %s %s",
+                item.label,
+                item.title,
+                label_acronym,
+                title_acronym,
+            )
+        acronym = label_acronym if label_acronym else title_acronym
+        completed_acronyms.append(
+            WithAcronym(qid=item.qid, acronym=acronym, found_by="complete_acronyms")
+        )
+    return completed_acronyms
 
 
 def complete_ceurws_title(proceedings: List[WikiDataProceeding]) -> List[WithCeurWsTitle]:
@@ -108,4 +155,14 @@ def _extract_title_from_ceurws_org(volume_number: int) -> Optional[str]:
     tag = soup.find("span", class_="CEURVOLTITLE")
     if tag:
         return tag.get_text()
+    return None
+
+
+def extract_acronym(input_string: str) -> Optional[str]:
+    pattern = r"\((.*?)\)"
+    matches = re.search(pattern, input_string)
+
+    if matches:
+        return matches.group(1)
+
     return None

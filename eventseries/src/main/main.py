@@ -8,9 +8,12 @@ import logging
 
 import spacy
 
-from eventseries.src.main.completion.attribute_completion import complete_information
+from eventseries.src.main.completion.attribute_completion import (
+    complete_information,
+)
 from eventseries.src.main.dblp.dblp_context import DblpContext
 from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
+from eventseries.src.main.matcher.acronym_matcher import AcronymMatch
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
 from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset
@@ -89,6 +92,7 @@ if __name__ == "__main__":
     unmatched_events = [event for event in to_be_completed if event.qid not in matched_events]
 
     training_set = create_training_test_dataset(repository.get_matches())
+
     ngram_matcher = NgramMatch(matches_df=training_set)
     ngram_matches = ngram_matcher.match_events_to_series(
         event_list=unmatched_events, series_list=completed_series
@@ -100,6 +104,9 @@ if __name__ == "__main__":
         phrase_matcher = PhraseMatch(matches_df=training_set)
         phrase_matches = phrase_matcher.wikidata_match(unmatched_events, completed_series)
         logging.info("Found %s matched through phrase-matching.", len(phrase_matches))
+
+    acronym_matches = AcronymMatch(training_set).wikidata_match(unmatched_events, completed_series)
+    logging.info("Found %s matched through acronym-matching.", len(acronym_matches))
 
     # Use case scenario 1
     # series_completion = SeriesCompletion()

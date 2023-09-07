@@ -36,7 +36,7 @@ class NlpMatcher:
     def match(self, events: List[WikiDataEvent], event_series: List[WikiDataEventSeries]):
 
         phrase_matcher = PhraseMatch(self.train_test_set)
-        phrase_matcher.fit()
+        phrase_matcher.test_accuracy()
         phrase_matches_df = phrase_matcher.wikidata_match(events, event_series)
         phrase_matches_df[TYPE] = "Phrase_matching"
         events_df = (
@@ -47,7 +47,7 @@ class NlpMatcher:
         events_df.reset_index(drop=True, inplace=True)
 
         acronym_matcher = AcronymMatch(self.train_test_set)
-        acronym_matcher.matcher()
+        acronym_matcher.fit()
         acronym_matches_df = acronym_matcher.wikidata_match(events_df, event_series_df)
         acronym_matches_df[TYPE] = "Acronym_matching"
         events_df = (

@@ -5,9 +5,13 @@ import pandas as pd
 import spacy
 import spacy.matcher
 
-from eventseries.src.main.repository.completions import Match, FullMatch
-from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataEventSeries, \
-    get_title_else_label, QID
+from eventseries.src.main.repository.completions import FullMatch
+from eventseries.src.main.repository.wikidata_dataclasses import (
+    WikiDataEvent,
+    WikiDataEventSeries,
+    get_title_else_label,
+    QID,
+)
 
 
 # from typing import List
@@ -35,7 +39,7 @@ class PhraseMatch:
         # Capturing all the distinct series
         self.series_distinct: List[str] = []
 
-    def fit(self):
+    def test_accuracy(self):
         true_positives = 0
         false_positives = 0
         false_negatives = 0
@@ -51,9 +55,7 @@ class PhraseMatch:
                 if span.text not in self.series_distinct:
                     self.series_distinct.append(span.text)
                 if (
-                    self.matches_df.loc[
-                        self.matches_df["event"] == event, "series"
-                    ].values[0]
+                    self.matches_df.loc[self.matches_df["event"] == event, "series"].values[0]
                 ) == span.text:
                     true_positives += 1
                 else:
@@ -66,20 +68,20 @@ class PhraseMatch:
         # print("true positives: ", true_positives)
         # print("false positives: ", false_positives)
         # print("false negatives: ", false_negatives)
-        logging.debug("Statistics from Phrase matching: ")
+        logging.info("Statistics from Phrase matching: ")
         precision = true_positives / (true_positives + false_positives)
-        logging.debug("Precision: %s", precision)
+        logging.info("Precision: %s", precision)
         recall = true_positives / (true_positives + false_negatives)
         self.recall = recall
-        logging.debug("Recall: %s", recall)
+        logging.info("Recall: %s", recall)
         f1_score = 2 * (precision * recall) / (precision + recall)
-        logging.debug("F1-Score: %s", f1_score)
+        logging.info("F1-Score: %s", f1_score)
 
         # print("Number of containment matches from event titles: ", len(matching_events))
 
     def wikidata_match(
-        self, events:List[WikiDataEvent], event_series: List[WikiDataEventSeries]
-    ) -> List[Match]:
+        self, events: List[WikiDataEvent], event_series: List[WikiDataEventSeries]
+    ) -> List[FullMatch]:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
             return []
@@ -109,7 +111,7 @@ class PhraseMatch:
                     FullMatch(
                         event=event,
                         series=series_from_title,
-                        found_by="PhraseMatch::wikidata_match"
+                        found_by="PhraseMatch::wikidata_match",
                     )
                 )
 
