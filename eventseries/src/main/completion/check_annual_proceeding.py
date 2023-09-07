@@ -16,13 +16,10 @@ class CheckAnnualProceeding:
     def is_proceeding_annual(self, title: str) -> bool:
         # Get synonyms of "annual"
         synonyms_of_annual = self.get_synonyms("annual")
-        if self.contains_synonym(title, synonyms_of_annual):
-            return True
-        else:
-            return False
+        return self.contains_synonym(title, synonyms_of_annual)
 
     def get_synonyms(self, word: str) -> list:
-        synonyms = list()
+        synonyms = []
         for syn in wordnet.synsets(word):
             for lemma in syn.lemmas():
                 synonyms.append(lemma.name())

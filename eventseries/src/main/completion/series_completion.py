@@ -1,46 +1,36 @@
-from typing import Dict, Set, List
+import logging
+from typing import Set, List
 
 from eventseries.src.main.completion.check_annual_proceeding import (
     CheckAnnualProceeding,
 )
-from eventseries.src.main.query.query_proceedings import WikidataEventsProceedings
+from eventseries.src.main.repository.repository import Repository
+from eventseries.src.main.repository.wikidata_dataclasses import get_title_else_label
 
 
 class SeriesCompletion:
 
-    def __init__(self) -> None:
-        self.annual_proceedings = list()
+    def __init__(self, repository: Repository) -> None:
+        self.annual_proceedings = []
+        self.repo = repository
 
     def get_event_series_from_ceur_ws_proceedings(self) -> Set:
-        # TODO: Check the fastest way to retrieve the CEUR-WS proccedings
-        events_dict = self.extract_proceedings_titles()
+        proceedings = self.repo.proceeding_by_qid.values()
         # Check annual proceeding
-        """ Both JsonCacheManager(CEUR-WS proceedings) and CEUR-WS proceedings from wikidata give
-        the same number of results having annual keyword.(Separately matcher is not required to be called for the
-        CEUR-WS proceedings)
-        """
-        event_series = list()
+        event_series = []
         annual_proceeding = CheckAnnualProceeding()
-        for event in events_dict:
-            if "proceedingTitle" in event and annual_proceeding.is_proceeding_annual(
-                    event["proceedingTitle"]
-            ):
-                self.annual_proceedings.append(event)
-        print(f"\nFound proceedings with `annual` synonyms : ", len(self.annual_proceedings))
-        for event in self.annual_proceedings:
-            if "series" in event:
-                event_series.append(event["series"])
+        for proceeding in proceedings:
+            title = get_title_else_label(proceeding)
+            if annual_proceeding.is_proceeding_annual(title):
+                self.annual_proceedings.append(proceeding)
+        logging.info("Found proceedings with `annual` synonyms : %s", len(self.annual_proceedings))
+        for proceeding in self.annual_proceedings:
+            event  =self.repo.get_event_by_qid(proceeding.event)
+            if event.part_of_series is not None:
+                event_series.append(event.part_of_series)
         set_event_series = set(event_series)
-        print(f"Unique series found in wikidata: ", len(set_event_series))
-        print()
+        logging.info("Unique series found in wikidata: %s", len(set_event_series))
         return set_event_series
 
     def get_annual_proceedings(self) -> List[str]:
         return self.annual_proceedings
-
-    def extract_proceedings_titles(self) -> Dict:
-        events = WikidataEventsProceedings()
-        events_dict = events.read_as_dict()
-        # cache_manager = JsonCacheManager()
-        # list_events = cache_manager.load_lod("volumes")
-        return events_dict
