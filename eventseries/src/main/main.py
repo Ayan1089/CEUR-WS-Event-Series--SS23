@@ -3,6 +3,8 @@ Created on 2023-05-03
 
 @author: Ayan1089
 """
+import os
+from pathlib import Path
 
 from eventseries.src.main.completeSeries.series_completion import SeriesCompletion
 from eventseries.src.main.matcher.full_matcher import FullMatch
