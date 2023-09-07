@@ -69,7 +69,7 @@ class NlpMatcher:
         n_gram_matches_df[TYPE] = "Ngram_matching"
 
         tf_idf_matcher = TfIdfMatch(self.train_test_set)
-        tf_idf_matcher.matcher()
+        tf_idf_matcher.fit()
         tf_idf_matches_df = tf_idf_matcher.wikidata_match(events_df, event_series_df)
         events_df = (
             events_df.merge(tf_idf_matches_df, on="event_id", how="left", indicator=True)

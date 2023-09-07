@@ -8,9 +8,7 @@ import logging
 
 import spacy
 
-from eventseries.src.main.completion.attribute_completion import (
-    complete_information,
-)
+from eventseries.src.main.completion.attribute_completion import complete_information
 from eventseries.src.main.dblp.dblp_context import DblpContext
 from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
 from eventseries.src.main.matcher.acronym_matcher import AcronymMatch
@@ -18,6 +16,7 @@ from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
 from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset
 from eventseries.src.main.matcher.phrase_matcher import PhraseMatch
+from eventseries.src.main.matcher.tfidf_matcher import TfIdfMatch
 from eventseries.src.main.repository.completion_cache import CompletionCache
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.repository import Repository
@@ -107,6 +106,9 @@ if __name__ == "__main__":
 
     acronym_matches = AcronymMatch(training_set).wikidata_match(unmatched_events, completed_series)
     logging.info("Found %s matched through acronym-matching.", len(acronym_matches))
+
+    tfidf_matches = TfIdfMatch(training_set).wikidata_match(unmatched_events, completed_series)
+    logging.info("Found %s matched through tf-idf-matches.", len(tfidf_matches))
 
     # Use case scenario 1
     # series_completion = SeriesCompletion()
