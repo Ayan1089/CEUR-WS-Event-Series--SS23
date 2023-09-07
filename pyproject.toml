@@ -29,6 +29,7 @@ dependencies = [
     'neo4j>=5.8',
     'spacy>3.4.0',
     'scikit-learn>=1.0.2',
+    'gensim>=4.3.2',
     'nltk>=3.8',
     'pandas>=1.4.4',
     'numpy>=1.21.5',
