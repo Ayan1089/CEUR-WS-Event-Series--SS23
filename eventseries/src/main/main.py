@@ -5,12 +5,13 @@ Created on 2023-05-03
 """
 import importlib.resources as ires
 import logging
+import zipfile
+from pathlib import Path
 
 import spacy
 
 from eventseries.src.main.completion.attribute_completion import complete_information
 from eventseries.src.main.dblp.dblp_context import DblpContext
-from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
 from eventseries.src.main.matcher.acronym_matcher import AcronymMatch
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
@@ -42,6 +43,12 @@ def spacy_package_exists():
     return True
 
 
+def extract_dblp_zip(zip_path: Path, extract_to: Path):
+    logging.debug("Unzipping scraped dblp-html files")
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(extract_to)
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     # Create the directories for persistence.
@@ -54,6 +61,12 @@ if __name__ == "__main__":
         with ires.as_file(dir_traversable) as file:
             file.mkdir(parents=True, exist_ok=True)
 
+    zip_file_path = resource_dir / "dblp" / "conf.zip"
+    with ires.as_file(zip_file_path) as zip_file, ires.as_file(dblp_context) as dblp_path:
+        if zip_file_path.is_file():
+            extract_dblp_zip(zip_file, dblp_path)
+
+
     repository = Repository(
         query_manager=WikiDataQueryManager(),
         dblp_repo=DblpRepository(dblp_context=DblpContext()),
@@ -62,7 +75,8 @@ if __name__ == "__main__":
 
     fix_known_errors(repository)
 
-    scrape_wikidata_with_dblp_id(repository)
+    # Requesting over 3000 files from dblp can take a lot of time!
+    # scrape_wikidata_with_dblp_id(repository)
 
     complete_information(repository)
 
