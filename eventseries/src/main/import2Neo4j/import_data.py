@@ -15,7 +15,7 @@ class ImportData:
         conn = Neo4jConnection(
             uri="bolt://localhost:7687", user="neo4j", pwd="Neelima@17"
         )
-        # resources_path = os.path.abspath("resources")
+        # resources_path = Path(__file__).resolve().parent / ".." / "resources"
         # events = os.path.join(resources_path, "events_with_ordinal.json")
         query_string = """
         CALL apoc.load.json("file:///C:\\Users\\Vinay Shah\\Desktop\\All_Files\\CEUR-WS-Event-Series--SS23\\eventseries\\src\\main\\resources\\person.json")
@@ -31,7 +31,7 @@ class ImportData:
         print(conn.query(query_string, db="neo4j"))
 
     def new_func(self):
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         events = os.path.join(resources_path, "events_with_ordinal.json")
 
         with open(events, "r", encoding="utf-8") as json_file:
@@ -170,7 +170,7 @@ class ImportData:
         driver = Driver()
         driver_1 = driver.connect()
         with driver_1.session() as session:
-            resources_path = os.path.abspath("resources")
+            resources_path = Path(__file__).resolve().parent / ".." / "resources"
             events_with_countries = os.path.join(
                 resources_path, "events_with_countries.json"
             )

@@ -12,7 +12,7 @@ class ImportData(object):
         conn = Neo4jConnection(
             uri="bolt://localhost:7687", user="neo4j", pwd="Neelima@17"
         )
-        # resources_path = os.path.abspath("resources")
+        # resources_path = Path(__file__).resolve().parent / ".." / "resources"
         # events = os.path.join(resources_path, "events_with_ordinal.json")
         query_string = """
         CALL apoc.load.json("file:///C:\\Users\\Vinay Shah\\Desktop\\All_Files\\CEUR-WS-Event-Ser
@@ -29,7 +29,7 @@ class ImportData(object):
         print(conn.query(query_string, db="neo4j"))
 
     def new_func(self):
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         events = os.path.join(resources_path, "events_with_ordinal.json")
 
         with open(events, "r", encoding="utf-8") as json_file:

@@ -19,7 +19,7 @@
 #
 #     def retrieve_dblp_matches(self, wikidata_events_with_dblp_event_id):
 #         # Retrieve the dblp events
-#         resources_path = os.path.abspath("resources")
+#         resources_path = Path(__file__).resolve().parent / ".." / "resources"
 #         path = os.path.join(resources_path, "dblp_event_series.pickle")
 #         dblp_matches = load_event_series()
 #         dblp_matches = self.load_event_series(path)

@@ -85,7 +85,7 @@ class Utility(object):
     def read_event_titles(self):
         """Json reader for wikidata event titles"""
         events_file = os.path.join(
-            os.path.abspath("resources"), "events_without_matches.json"
+            Path(__file__).resolve().parent / ".." / "resources", "events_without_matches.json"
         )
         event_titles = []
         events_with_id = []
@@ -106,7 +106,7 @@ class Utility(object):
     def read_event_acronyms(self):
         """Json reader for wikidata event titles"""
         events_file = os.path.join(
-            os.path.abspath("resources"), "events_without_matches.json"
+            Path(__file__).resolve().parent / ".." / "resources", "events_without_matches.json"
         )
         with open(events_file) as file:
             events = json.load(file)
@@ -116,7 +116,7 @@ class Utility(object):
 
     def read_event_series_titles(self):
         """Json reader for wikidata event series titles"""
-        series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
+        series_file = os.path.join(Path(__file__).resolve().parent / ".." / "resources", "event_series.json")
         series_titles = []
         series_with_id = []
         series_acronyms = []
@@ -135,7 +135,7 @@ class Utility(object):
 
     def read_event_series_acronyms(self):
         """Json reader for wikidata event series titles"""
-        series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
+        series_file = os.path.join(Path(__file__).resolve().parent / ".." / "resources", "event_series.json")
         with open(series_file) as file:
             series = json.load(file)
             series_titles = [

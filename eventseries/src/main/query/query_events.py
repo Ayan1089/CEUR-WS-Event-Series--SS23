@@ -48,7 +48,7 @@ class WikidataEvents(object):
         params = {"query": query, "format": "json"}  # or json
         response = requests.request("POST", url, params=params)
 
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         file = open(os.path.join(resources_path, "events.json"), "w", encoding="utf-8")
         file.write(response.text)
         file.close()

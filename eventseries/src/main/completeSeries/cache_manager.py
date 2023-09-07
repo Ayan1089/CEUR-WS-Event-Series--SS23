@@ -37,7 +37,7 @@ class JsonCacheManager:
         Returns:
             str: the path to the lust of dicts cache
         """
-        # resources_path = os.path.abspath("resources")
+        # resources_path = Path(__file__).resolve().parent / ".." / "resources"
         resources_path = Path(__file__).resolve().parent / ".." / "resources"
         root_path = os.path.join(resources_path, "ceurws")
         os.makedirs(root_path, exist_ok=True)  # make directory if it does not exist

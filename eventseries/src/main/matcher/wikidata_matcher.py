@@ -11,7 +11,7 @@ class Matcher:
     def match(self, records_with_potential_attr, attr):
         titles = [record[attr] for record in records_with_potential_attr]
         self.event_series = self.get_event_series_title(
-            os.path.join(os.path.abspath("resources"), "event_series.json")
+            os.path.join(Path(__file__).resolve().parent / ".." / "resources", "event_series.json")
         )
         matches = set(titles) & set(self.event_series)
         matching_records = []

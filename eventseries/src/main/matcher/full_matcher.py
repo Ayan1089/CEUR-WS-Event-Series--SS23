@@ -16,7 +16,7 @@ class FullMatch:
         self.matcher = matcher
 
     def match(self, records):
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
 
         # Remove the events that already have a series assigned
         records_without_series = self.event_extractor.get_events_without_series(records)

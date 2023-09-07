@@ -107,7 +107,7 @@ class VolumeParser:
         return records_with_titles
 
     def extract_title_ceurws_url(self, url):
-        self.cacheObj.load_volume_cache(os.path.join(os.path.abspath("resources"), "ceurws_title.pickle"))
+        self.cacheObj.load_volume_cache(os.path.join(Path(__file__).resolve().parent / ".." / "resources", "ceurws_title.pickle"))
         util = Utility()
         url = util.generate_ceurws_url(url)
         vol_number = util.extract_vol_number("http://ceurspt.wikidata.dbis.rwth-aachen.de/Vol-", url)

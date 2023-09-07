@@ -17,7 +17,7 @@ class OrdinalExtractor:
         return records
 
     def dump_events_with_ordinality(self, records):
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         with open(
             os.path.join(resources_path, "events_with_ordinal.json"),
             "w",

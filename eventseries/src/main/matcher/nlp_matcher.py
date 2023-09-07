@@ -30,7 +30,6 @@ class NlpMatcher:
         self.df = self.create_training_test_dataset(
             event_extractor=event_extractor, matcher=matcher
         )
-        self.df.to_json("/Users/ayan/Projects/KGLab/main/CEUR-WS-Event-Series--SS23/notebooks/df.json")
 
     def match(self, events_df: pd.DataFrame, event_series_df: pd.DataFrame):
         events = events_df["title"].tolist()
@@ -114,13 +113,13 @@ class NlpMatcher:
             self, event_extractor: EventExtractor, matcher: Matcher
     ):
         matches = []
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         path_to_wikidata_events = os.path.join(
             resources_path, "EventsWithoutSeries.json"
         )
         # path_to_wikidata_events = Path("") / ".." / "resources" / "EventsWithoutSeries.json"
 
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         path = os.path.join(resources_path, "dblp_event_series.pickle")
 
         dblp_matches_df = matching.match_wikidata_conference_to_series_dblp_id(

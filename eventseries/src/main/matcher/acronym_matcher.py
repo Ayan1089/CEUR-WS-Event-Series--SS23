@@ -64,7 +64,7 @@ class AcronymMatch:
     def extract_event_acronyms(self, events_df: pd.DataFrame) -> pd.DataFrame:
         # event_acronyms = []
         # event_ids = []
-        # resources_path = os.path.abspath("resources")
+        # resources_path = Path(__file__).resolve().parent / ".." / "resources"
         # events_file = os.path.join(resources_path, "events_without_matches.json")
         # with open(events_file) as file:
         #     events = json.load(file)
@@ -87,7 +87,7 @@ class AcronymMatch:
         return events_df
 
     def extract_series_acronyms(self, event_series_df: pd.DataFrame) -> pd.DataFrame:
-        # resources_path = os.path.abspath("resources")
+        # resources_path = Path(__file__).resolve().parent / ".." / "resources"
         # series_acronyms = []
         # series_id = []
         # series_file = os.path.join(resources_path, "event_series.json")
