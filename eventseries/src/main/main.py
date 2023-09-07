@@ -14,7 +14,7 @@ from eventseries.src.main.dblp.scraper import scrape_wikidata_with_dblp_id
 from eventseries.src.main.matcher.acronym_matcher import AcronymMatch
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
 from eventseries.src.main.matcher.ngram_matcher import NgramMatch
-from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset
+from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset, NlpMatcher
 from eventseries.src.main.matcher.phrase_matcher import PhraseMatch
 from eventseries.src.main.matcher.tfidf_matcher import TfIdfMatch
 from eventseries.src.main.repository.completion_cache import CompletionCache
@@ -104,8 +104,8 @@ if __name__ == "__main__":
         phrase_matches = phrase_matcher.wikidata_match(unmatched_events, completed_series)
         logging.info("Found %s matched through phrase-matching.", len(phrase_matches))
 
-    acronym_matches = AcronymMatch(training_set).wikidata_match(unmatched_events, completed_series)
-    logging.info("Found %s matched through acronym-matching.", len(acronym_matches))
+        acronym_matches = AcronymMatch(training_set).wikidata_match(unmatched_events, completed_series)
+        logging.info("Found %s matched through acronym-matching.", len(acronym_matches))
 
     tfidf_matches = TfIdfMatch(training_set).wikidata_match(unmatched_events, completed_series)
     logging.info("Found %s matched through tf-idf-matches.", len(tfidf_matches))
@@ -114,6 +114,6 @@ if __name__ == "__main__":
     # series_completion = SeriesCompletion()
     # event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
 
-    # nlp matches FIXME
-    # nlp_matcher = NlpMatcher(event_extractor, matcher)
-    # nlp_matcher.match(utility.read_event_titles(), utility.read_event_series_titles())
+    nlp_matcher = NlpMatcher(training_set)
+    nlp_matches = nlp_matcher.match(unmatched_events,completed_series)
+    logging.info("Found %s matched through nlp-matches.", len(nlp_matches))

@@ -8,6 +8,10 @@ from gensim.models import Word2Vec
 from nltk.corpus import stopwords
 from sklearn.metrics.pairwise import cosine_similarity
 
+from eventseries.src.main.repository.completions import FullMatch
+from eventseries.src.main.repository.wikidata_dataclasses import WikiDataEvent, WikiDataEventSeries, \
+    get_title_else_label
+
 
 class NaiveWord2VecMatch:
     def __init__(self, matches_df: pd.DataFrame) -> None:
@@ -18,7 +22,7 @@ class NaiveWord2VecMatch:
         self.stop_words = set(stopwords.words("english"))
         self.event_titles = self.remove_stopwords_tokenize(matches_df["event"].tolist())
         self.event_titles = [[token.lower() for token in tokens] for tokens in self.event_titles]
-        self.series_titles = self.remove_stopwords_tokenize(matches_df["event_series"].tolist())
+        self.series_titles = self.remove_stopwords_tokenize(matches_df["series"].tolist())
         self.series_titles = [[token.lower() for token in tokens] for tokens in self.series_titles]
         self.model = Word2Vec(self.event_titles + self.series_titles, vector_size=100, window=5, min_count=1, sg=0)
         self.matches_df["event_tokenized"] = self.event_titles
@@ -37,8 +41,9 @@ class NaiveWord2VecMatch:
             series_vector = series_vector.reshape(1, -1)
             series_vector_list.append(series_vector)
         self.matches_df["event_series_vectors"] = series_vector_list
+        self.fit()
 
-    def matcher(self):
+    def fit(self):
         true_positives = 0
         false_positives = 0
         for i in range(0, len(self.matches_df["event_vectors"])):
@@ -52,6 +57,7 @@ class NaiveWord2VecMatch:
                 if similarity > max_similarity:
                     max_similarity = similarity
                     best_j = j
+            # FIXME same_index_similarity might not be defined at this point
             if i != best_j and max_similarity > same_index_similarity:
                 false_positives += 1
                 # print("EVENT: ", self.matches_df.loc[i, "event"])
@@ -76,27 +82,31 @@ class NaiveWord2VecMatch:
 
     def wikidata_match(
             self,
-            events_df: pd.DataFrame,
-            series_df: pd.DataFrame,
-    ) -> pd.DataFrame:
+            events_list: List[WikiDataEvent],
+            series_list: List[WikiDataEventSeries],
+    ) -> List[FullMatch]:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
-            return pd.DataFrame()
-        event_tokenized_titles = self.remove_stopwords_tokenize(events_df["title"].tolist())
+            return []
+
+        event_titles = [get_title_else_label(event) for event in events_list]
+        series_titles = [get_title_else_label(series) for series in series_list]
+
+        event_tokenized_titles = self.remove_stopwords_tokenize(event_titles)
         event_tokenized_titles = [[token.lower() for token in tokens] for tokens in event_tokenized_titles]
 
-        series_tokenized_titles = self.remove_stopwords_tokenize(series_df["title"].tolist())
+        series_tokenized_titles = self.remove_stopwords_tokenize(series_titles)
         series_tokenized_titles = [[token.lower() for token in tokens] for tokens in series_tokenized_titles]
 
         data_list_single_column = [[inner_list] for inner_list in event_tokenized_titles]
         matches_events_df = pd.DataFrame(
-            {"events_tokenized": data_list_single_column, "events": events_df["title"].tolist(),
-             "event_id": events_df["event_id"].tolist()})
+            {"events_tokenized": data_list_single_column, "events": event_titles,
+             "event_id": events_list})
 
         data_list_single_column = [[inner_list] for inner_list in series_tokenized_titles]
         matches_series_df = pd.DataFrame(
-            {"series_tokenized": data_list_single_column, "event_series": series_df["title"].tolist(),
-             "series_id": series_df["series_id"].tolist()})
+            {"series_tokenized": data_list_single_column, "series": series_titles,
+             "series_id": series_list})
 
         event_vector_list = []
         for event_tokens in event_tokenized_titles:
@@ -112,15 +122,11 @@ class NaiveWord2VecMatch:
             series_vector_list.append(series_vector)
         matches_series_df["event_series_vectors"] = series_vector_list
 
-        matching_events = []
-        matching_events_ids = []
-        matching_series = []
-        matching_series_ids = []
+
+        found_matches: List[FullMatch] = []
         for i in range(0, len(matches_events_df["event_vectors"])):
             max_similarity = 0
-            best_event = None
             best_event_id = None
-            best_series = None
             best_series_id = None
             for j in range(0, len(matches_series_df["event_series_vectors"])):
                 try:
@@ -129,21 +135,15 @@ class NaiveWord2VecMatch:
                 except ValueError:
                     continue
                 if similarity > max_similarity:
-                    best_event = matches_events_df.loc[i, "events_tokenized"]
                     best_event_id = matches_events_df.loc[i, "event_id"]
-                    best_series = matches_series_df.loc[j, "series_tokenized"]
                     best_series_id = matches_series_df.loc[j, "series_id"]
                     max_similarity = similarity
-            matching_events.append(best_event)
-            matching_events_ids.append(best_event_id)
-            matching_series.append(best_series)
-            matching_series_ids.append(best_series_id)
-        results_df = pd.DataFrame(
-            {"event_title": matching_events, "event_id": matching_events_ids,
-             "series_title": matching_series,
-             "series_id": matching_series_ids})
-        print("Number of Word2Vec matches from event titles in Wikidata: ", len(matching_events))
-        return results_df
+            found_matches.append(FullMatch(
+                event=best_event_id,
+                series=best_series_id,
+                found_by="NaiveWord2VecMatch::wikidata_match"
+            ))
+            return found_matches
 
     def remove_stopwords_tokenize(self, text_list) -> List[List[str]]:
         # Remove stopwords from each string in the list
