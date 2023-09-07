@@ -37,7 +37,7 @@ jobs:
           python -m spacy download en_core_web_sm
       - name: Download NLTK stopwords
         run: |
-          python -m nltk.downloader stopwords
+          python -m nltk.downloader stopwords, punkt
       - name: Run Python Script
         run: |
           python eventseries/src/main/main.py
