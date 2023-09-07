@@ -161,7 +161,7 @@ class NlpMatcher:
     def extract_series(self, wikidata_events_with_series):
         matches = []
         series_file = os.path.join(
-            os.path.abspath("../main/resources"), "event_series.json"
+            Path(__file__).resolve().parent / ".." / "resources", "event_series.json"
         )
 
         with open(series_file) as file:
