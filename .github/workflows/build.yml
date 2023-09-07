@@ -32,6 +32,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           scripts/install
+      - name: Run Python Script
+        run: |
+          python eventseries/src/main/main.py
       - name: Run tests
         run: |
           scripts/test
