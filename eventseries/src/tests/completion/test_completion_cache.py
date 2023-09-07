@@ -30,45 +30,45 @@ class TestCompletionCache(TestCase):
         self.temp_dir.cleanup()
 
     def test_add_completion_for_qid(self):
-    self.assertEqual(0, len(self.completion_cache.cache[CompletionCache.ITEM_COMPLETION]))
-    self.completion_cache.add_completion(completion=self.with_acronym)
-    self.assertEqual(1, len(self.completion_cache.cache[CompletionCache.ITEM_COMPLETION]))
-    self.assertEqual(
-        self.with_acronym,
-        self.completion_cache.cache[CompletionCache.ITEM_COMPLETION][QID("Q123")][0],
-    )
+        self.assertEqual(0, len(self.completion_cache.cache[CompletionCache.ITEM_COMPLETION]))
+        self.completion_cache.add_completion(completion=self.with_acronym)
+        self.assertEqual(1, len(self.completion_cache.cache[CompletionCache.ITEM_COMPLETION]))
+        self.assertEqual(
+            self.with_acronym,
+            self.completion_cache.cache[CompletionCache.ITEM_COMPLETION][QID("Q123")][0],
+        )
 
     def test_get_completions_for_qid(self):
-    self.completion_cache.add_completion(self.with_acronym)
-    self.completion_cache.add_completion(
-        WithOrdinal(qid=QID("Q100"), ordinal=1, found_by="TestAlgo")
-    )
-    completions = self.completion_cache.get_completions_for_qid(QID("Q123"))
-    self.assertEqual(1, len(completions))
-    self.assertEqual(self.with_acronym, completions[0])
+        self.completion_cache.add_completion(self.with_acronym)
+        self.completion_cache.add_completion(
+            WithOrdinal(qid=QID("Q100"), ordinal=1, found_by="TestAlgo")
+        )
+        completions = self.completion_cache.get_completions_for_qid(QID("Q123"))
+        self.assertEqual(1, len(completions))
+        self.assertEqual(self.with_acronym, completions[0])
 
     def test_get_all_matches(self):
-    self.completion_cache.add_completion(self.with_acronym)
-    self.completion_cache.add_match(self.match)
-    matches = self.completion_cache.get_all_matches()
-    self.assertIsInstance(matches, List)
-    self.assertEqual(1, len(matches))
-    self.assertIsInstance(matches[0], FullMatch)
-    self.assertEqual(self.match, matches[0])
+        self.completion_cache.add_completion(self.with_acronym)
+        self.completion_cache.add_match(self.match)
+        matches = self.completion_cache.get_all_matches()
+        self.assertIsInstance(matches, List)
+        self.assertEqual(1, len(matches))
+        self.assertIsInstance(matches[0], FullMatch)
+        self.assertEqual(self.match, matches[0])
 
     def test_get_matches_by_source(self):
-    self.assertIsInstance(self.completion_cache.get_matches_by_source(), Dict)
-    self.completion_cache.add_match(self.match)
-    match_dict = self.completion_cache.get_matches_by_source()
-    self.assertIsInstance(match_dict, Dict)
-    self.assertTrue(self.match.found_by in match_dict)
-    self.assertEqual(self.match, match_dict[self.match.found_by])
+        self.assertIsInstance(self.completion_cache.get_matches_by_source(), Dict)
+        self.completion_cache.add_match(self.match)
+        match_dict = self.completion_cache.get_matches_by_source()
+        self.assertIsInstance(match_dict, Dict)
+        self.assertTrue(self.match.found_by in match_dict)
+        self.assertEqual(self.match, match_dict[self.match.found_by])
 
     def test_add_match(self):
-    self.assertEqual(0, len(self.completion_cache.cache[CompletionCache.MATCHES]))
-    self.completion_cache.add_match(self.match)
-    self.assertEqual(1, len(self.completion_cache.cache[CompletionCache.MATCHES]))
-    self.assertEqual(self.match, self.completion_cache.cache[CompletionCache.MATCHES][0])
+        self.assertEqual(0, len(self.completion_cache.cache[CompletionCache.MATCHES]))
+        self.completion_cache.add_match(self.match)
+        self.assertEqual(1, len(self.completion_cache.cache[CompletionCache.MATCHES]))
+        self.assertEqual(self.match, self.completion_cache.cache[CompletionCache.MATCHES][0])
 
     def test_store_load_cache(self):
         # assert directory is empty at start
