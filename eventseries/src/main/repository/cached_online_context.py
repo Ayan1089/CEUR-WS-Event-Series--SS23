@@ -82,7 +82,7 @@ class CachedContext(Generic[T]):
         if not full_file.exists() or overwrite:
             full_file.parent.mkdir(parents=True, exist_ok=True)
 
-            with open(str(full_file), mode="wb") as file:
+            with full_file.open(mode="wb") as file:
                 pickle.dump(obj=content, file=file)
 
     @staticmethod
