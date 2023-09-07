@@ -13,6 +13,8 @@ from eventseries.src.main.repository.wikidata_dataclasses import (
 
 
 def dice_coefficient(ngrams_first: Set, ngrams_second: Set):
+    if len(ngrams_first) == 0 and len(ngrams_second) == 0:
+        return 0
     return (2 * len(ngrams_first.intersection(ngrams_second))) / (
         len(ngrams_first) + len(ngrams_second)
     )
@@ -30,7 +32,7 @@ class NgramMatch:
         self.threshold_values = [0.8, 0.7, 0.6]
         self.best_threshold = 0.6
         self.best_n = 3
-        # self.fit()
+        self.fit()
 
     def fit(self):
         max_f1_score = 0

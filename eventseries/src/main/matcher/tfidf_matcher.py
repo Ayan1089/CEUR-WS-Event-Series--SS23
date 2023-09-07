@@ -7,7 +7,7 @@ from sklearn.feature_extraction import text
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-from eventseries.src.main.repository.completions import Match, FullMatch
+from eventseries.src.main.repository.completions import FullMatch
 from eventseries.src.main.repository.wikidata_dataclasses import (
     WikiDataEvent,
     WikiDataEventSeries,
@@ -112,7 +112,7 @@ class TfIdfMatch:
 
     def wikidata_match(
         self, events_list: List[WikiDataEvent], series_list: List[WikiDataEventSeries]
-    ) -> List[Match]:
+    ) -> List[FullMatch]:
         if self.recall == 1:
             print("Model is overfitting, and cannot be used")
             return []

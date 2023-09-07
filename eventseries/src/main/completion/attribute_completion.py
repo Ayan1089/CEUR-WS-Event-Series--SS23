@@ -18,7 +18,7 @@ from eventseries.src.main.repository.wikidata_dataclasses import (
 )
 
 
-def complete_information(repo: Repository):
+def complete_information(repo: Repository, ceurws_completion=False):
     events: List[WikiDataEvent] = list(repo.events_by_qid.values())
     proceedings: List[WikiDataProceeding] = list(repo.proceeding_by_event_qid.values())
 
@@ -37,8 +37,9 @@ def complete_information(repo: Repository):
         for proceeding in proceedings
         if _no_completion(proceeding.qid, WithCeurWsTitle, repo)
     ]
-    for ceurws_title_completion in complete_ceurws_title(without_ceurws_title_completion):
-        repo.completion_cache.add_completion(ceurws_title_completion)
+    if ceurws_completion:
+        for ceurws_title_completion in complete_ceurws_title(without_ceurws_title_completion):
+            repo.completion_cache.add_completion(ceurws_title_completion)
 
 
 def complete_acronym_information(repo: Repository):

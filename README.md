@@ -86,3 +86,6 @@ Event --> EventSeries: part of the series (P179)
     - http://www.wikidata.org/entity/Q113623296'
     - http://www.wikidata.org/entity/Q113649178'
     - http://www.wikidata.org/entity/Q113576146'
+- Bad WikiData entries
+  - [No meaningful label or title](https://www.wikidata.org/wiki/Q113672449)
+  - Invalid [dblp-id](https://www.wikidata.org/wiki/Q113580007)

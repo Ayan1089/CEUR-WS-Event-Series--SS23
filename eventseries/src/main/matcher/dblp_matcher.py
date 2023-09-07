@@ -80,6 +80,7 @@ class DblpMatcher:
         """
         scraper = DblpScraper(ctx=self.repo.dblp_repo.ctx)
         match: Optional[Match] = None
+        counter = 0
         if self.dbpl_to_wikidata[event].type == WikiDataEventType.CONFERENCE:
             match = self._find_series_for_conference(event, scraper)
         elif self.dbpl_to_wikidata[event].type == WikiDataEventType.WORKSHOP:
@@ -87,6 +88,9 @@ class DblpMatcher:
         else:
             logging.info("Skipping event with unknown type: %s", event)
         if match is not None:
+            counter += 1
+            if counter % 100:
+                logging.info("Currently running and already found %s matches ", counter)
             if isinstance(match, DblpMatch):
                 return self.find_full_match_from_dblp_match(match)
             return match
