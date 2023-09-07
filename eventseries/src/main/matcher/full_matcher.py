@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 from eventseries.src.main.matcher.wikidata_matcher import Matcher
 from eventseries.src.main.parsers.event_extractor import EventExtractor

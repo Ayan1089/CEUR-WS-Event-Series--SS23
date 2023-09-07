@@ -1,6 +1,7 @@
 import json
 import os
 import re
+from pathlib import Path
 
 from eventseries.src.main.import2Neo4j.Neo4jDriver import Driver
 from eventseries.src.main.import2Neo4j.neo_4j_connection import Neo4jConnection
