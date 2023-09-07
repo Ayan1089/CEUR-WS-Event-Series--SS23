@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import requests
 
@@ -32,7 +33,8 @@ class WikidataEventSeries(object):
         params = {"query": query, "format": "json"}  # or json
         response = requests.request("POST", url, params=params)
 
-        resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
+        # file = open(resources_path, "w", encoding="utf-8")
         file = open(
             os.path.join(resources_path, "event_series.json"), "w", encoding="utf-8"
         )

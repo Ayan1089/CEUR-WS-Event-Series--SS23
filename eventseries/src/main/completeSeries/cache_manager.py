@@ -4,6 +4,7 @@ Created on 2023-04-28
 """
 import os
 import urllib.request
+from pathlib import Path
 from typing import List, Dict
 
 import orjson
@@ -36,7 +37,8 @@ class JsonCacheManager:
         Returns:
             str: the path to the lust of dicts cache
         """
-        resources_path = os.path.abspath("resources")
+        # resources_path = os.path.abspath("resources")
+        resources_path = Path(__file__).resolve().parent / ".." / "resources"
         root_path = os.path.join(resources_path, "ceurws")
         os.makedirs(root_path, exist_ok=True)  # make directory if it does not exist
         json_path = f"{root_path}/{lod_name}.json"
