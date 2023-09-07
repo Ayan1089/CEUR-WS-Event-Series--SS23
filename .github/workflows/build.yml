@@ -35,9 +35,10 @@ jobs:
       - name: Install spaCy model
         run: |
           python -m spacy download en_core_web_sm
-      - name: Download NLTK stopwords
+      - name: Download NLTK stopwords, punkt
         run: |
-          python -m nltk.downloader stopwords, punkt
+          python -m nltk.downloader stopwords
+          python -m nltk.downloader punkt
       - name: Run Python Script
         run: |
           python eventseries/src/main/main.py
