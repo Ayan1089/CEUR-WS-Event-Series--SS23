@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Dict
 
 from eventseries.src.main.repository.cached_online_context import CachedContext
-from eventseries.src.main.repository.completions import FullMatch, WikidataItemCompletion, Match
+from eventseries.src.main.repository.completions import WikidataItemCompletion, Match
 from eventseries.src.main.repository.wikidata_dataclasses import QID
 
 
@@ -18,7 +18,7 @@ class CompletionCache(CachedContext):
             store_on_delete: bool = True,
     ):
         super().__init__(resource_dir, load_on_init, store_on_delete)
-        self.matches: List[FullMatch] = self.cache.get(CompletionCache.MATCHES, [])
+        self.matches: List[Match] = self.cache.get(CompletionCache.MATCHES, [])
         self.event_completions: Dict[QID, List[WikidataItemCompletion]] = self.cache.get(
             CompletionCache.ITEM_COMPLETION, {}
         )

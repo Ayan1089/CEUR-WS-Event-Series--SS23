@@ -11,7 +11,7 @@ from eventseries.src.main.repository.wikidata_dataclasses import (
     WikiDataEvent,
     QID,
     WikiDataEventType,
-    WikiDataProceeding,
+    WikiDataProceeding, get_title_else_label,
 )
 
 
@@ -43,7 +43,7 @@ def get_titles_from_match(match: Match) -> Tuple[str, str]:
     :param match: A FullMatch, NameMatch or DBlpMatch of which the titles should be extracted.
     :return: A tuple of (event_title,series_title).
     """
-    event_title = match.event.title
+    event_title = get_title_else_label(match.event)
     series_title = ""
     if isinstance(match, FullMatch):
         series_title = match.series.title if match.series.title is not None else match.series.label
