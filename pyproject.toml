@@ -7,16 +7,18 @@ build-backend = "hatchling.build"
 [project]
 name = "eventseries"
 authors = [
-  {name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de"}
+    { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de" },
+    { name = "Jakob Krude", email = "jakob.krude@rwth-aachen.de" }
 ]
 maintainers = [
-  { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de"},
+    { name = "Ayan Banerjee", email = "ayan.banerjee@rwth-aachen.de" },
+    { name = "Jakob Krude", email = "jakob.krude@rwth-aachen.de" }
 ]
 readme = "README.md"
-license= "Apache-2.0"
+license = "Apache-2.0"
 dependencies = [
-	# pyLoDStorage
-	'pyLoDStorage>=0.4.9',
+    # pyLoDStorage
+    'pyLoDStorage>=0.4.9',
     # https://github.com/pyparsing/pyparsing
     'pyparsing>=3.0.9',
     # https://github.com/savoirfairelinux/num2words
@@ -27,23 +29,26 @@ dependencies = [
     'neo4j>=5.8',
     'spacy>3.4.0',
     'scikit-learn>=1.0.2',
-    'nltk>=3.7',
+    'nltk>=3.8',
     'pandas>=1.4.4',
-    'numpy>=1.21.5'
-
+    'numpy>=1.21.5',
+    'orjson>=3.9.4',
+    "validators>=0.21.2",
+    "beautifulsoup4>=4.10",
+    "selenium>=4.11",
+    "gensim"
 
 ]
 
 install = [
-  "python -m spacy download en_core_web_sm"
+    "python -m spacy download en_core_web_sm"
 ]
 
-requires-python = ">=3.8"
-classifiers=[
+requires-python = ">=3.9"
+classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Web Environment",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -53,7 +58,7 @@ classifiers=[
     "Intended Audience :: Education",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License"
-    ]
+]
 dynamic = ["version", "description"]
 [tool.hatch.version]
 path = "eventseries/__init__.py"
@@ -65,10 +70,10 @@ Source = "https://github.com/Ayan1089/CEUR-WS-Event-Series--SS23/wiki"
 
 [project.optional-dependencies]
 test = [
-  "green",
+    "green",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = [
-  "eventseries"
+    "eventseries"
 ]

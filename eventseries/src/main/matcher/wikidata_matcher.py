@@ -10,7 +10,9 @@ class Matcher:
 
     def match(self, records_with_potential_attr, attr):
         titles = [record[attr] for record in records_with_potential_attr]
-        self.event_series = self.get_event_series_title(os.path.join(os.path.abspath("resources"), "event_series.json"))
+        self.event_series = self.get_event_series_title(
+            os.path.join(os.path.abspath("resources"), "event_series.json")
+        )
         matches = set(titles) & set(self.event_series)
         matching_records = []
         for match in matches:
@@ -22,7 +24,7 @@ class Matcher:
 
     def get_pickle_data(self, filename):
         cache_data = {}
-        with open(filename, 'rb') as file:
+        with open(filename, "rb") as file:
             cache_data = pickle.load(file)
             return list(cache_data.values())
 
@@ -31,7 +33,11 @@ class Matcher:
             data = json.load(file)
 
         # Extract all 'title' attributes
-        titles = [item["title"]["value"] for item in data["results"]["bindings"] if "title" in item]
+        titles = [
+            item["title"]["value"]
+            for item in data["results"]["bindings"]
+            if "title" in item
+        ]
 
         # Print the extracted titles
         return titles

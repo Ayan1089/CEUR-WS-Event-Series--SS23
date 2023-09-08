@@ -1,92 +1,124 @@
-'''
+"""
 Created on 2023-05-03
 
-@author: Ayan1089
-'''
-import json
-import os
+@author: Ayan1089, jkrude
+"""
+import importlib.resources as ires
+import logging
+import time
+import zipfile
+from pathlib import Path
 
-from plp.ordinal import Ordinal
+from eventseries.src.main.completion.attribute_completion import complete_information
+from eventseries.src.main.completion.series_completion import SeriesCompletion
+from eventseries.src.main.dblp.dblp_context import DblpContext
+from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
+from eventseries.src.main.matcher.full_matcher import full_matches
+from eventseries.src.main.matcher.nlp_matcher import create_training_test_dataset, NlpMatcher
+from eventseries.src.main.repository.completion_cache import CompletionCache
+from eventseries.src.main.repository.dblp_respository import DblpRepository
+from eventseries.src.main.repository.repository import Repository
+from eventseries.src.main.repository.wikidata_dataclasses import QID, WikiDataEventType
+from eventseries.src.main.repository.wikidata_query_manager import WikiDataQueryManager
 
-from eventseries.src.main.matcher.nlp_matcher import NlpMatcher
-from eventseries.src.main.matcher.wikidata_matcher import Matcher
-from eventseries.src.main.parsers.event_extractor import EventExtractor
-from eventseries.src.main.util.record_attributes import TITLE, LABEL, CEUR_WS_TITLE
-from eventseries.src.main.util.utility import Utility
-from import2Neo4j import ImportData
-from query.queried_events import Events
 
-if __name__ == '__main__':
-    importDataTemp = ImportData.ImportData()
-    # importDataTemp.fetch_data_and_import()
-    # importDataTemp.import_data_to_neo4j(importDataTemp.new_func())
-    # importDataTemp.import_event_series_to_neo4j(importDataTemp.new_func_series())
-    # importDataTemp.counter_func()
-    # importDataTemp.check_event_with_series(importDataTemp.new_func(), importDataTemp.new_func_series())
+def fix_known_errors(repo: Repository):
+    # This workshop has an invalid dblp id the original has one d to much in "conf/gvd/gvdb2021".
+    gvd_workshop_32 = repo.events_by_qid.get(QID("Q113580007"))
+    if gvd_workshop_32 is None:
+        return
+    gvd_workshop_32.dblp_id = "conf/gvd/gvd2021"
 
-    '''Stored the queried events in resources/events.json '''
-    events = Events()
-    events.query()
-    # Query Event series
-    events.event_series_query()
-    # # todo: Read the json directly using pyLODStorage
-    records = events.read_as_dict()
-    for record in records:
-        Ordinal.addParsedOrdinal(record)
-    resources_path = os.path.abspath("resources")
-    utility = Utility()
-    with open(os.path.join(resources_path, "events_with_ordinal.json"), "w", encoding="utf-8") as final:
-        json.dump(records, final, default=Utility.serialize_datetime)
 
-    event_extractor = EventExtractor()
-    matcher = Matcher()
-    '''Remove the events that already have a series assigned'''
-    records_without_series = event_extractor.check_events_with_series(records)
-    print("Length of the records that do not have series assigned: ", len(records_without_series))
-    records_with_titles = event_extractor.extract_ceurws_title(records_without_series)
-    utility.check_title_label(records_with_titles)
-    matches_with_ceurws_titles = matcher.match(records_with_titles, CEUR_WS_TITLE)
-    print("Full matches from title of CEUR-WS url: ", len(matches_with_ceurws_titles))
+def use_zip_if_no_dblp_context(zip_source_path, target_path):
+    with ires.as_file(target_path / "conf") as conf_file:
+        if conf_file.exists():
+            return
+        logging.info("Extracting zip archive of dblp content.")
+    with ires.as_file(zip_source_path) as zip_file, ires.as_file(target_path) as dblp_file:
+        if zip_file.is_file():
+            extract_dblp_zip(zip_file, dblp_file)
 
-    records_remaining = [record for record in records_without_series if record not in matches_with_ceurws_titles]
-    print("RECORDS REMAINING: ", len(records_remaining))
 
-    events_with_wikidata_titles = event_extractor.extract_wikidata_title(records_remaining)
+def extract_dblp_zip(zip_path: Path, extract_to: Path):
+    logging.debug("Unzipping scraped dblp-html files")
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(extract_to)
 
-    matches_with_wikidata_titles = matcher.match(events_with_wikidata_titles, TITLE)
-    print("Matches from title of event in wikidata: ", len(matches_with_wikidata_titles))
 
-    records_remaining = [record for record in records_remaining if record not in matches_with_wikidata_titles]
-    print("RECORDS REMAINING: ", len(records_remaining))
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    # Create the directories for persistence.
+    resource_dir = ires.files("eventseries.src.main") / "resources"
+    query_dir = resource_dir / "query_results"
+    dblp_path = resource_dir / "dblp"
+    dblp_repo = dblp_path / "parsed"
+    dblp_context = dblp_path / "conf"
+    completion_dir = resource_dir / "completions"
+    for dir_traversable in (query_dir, dblp_repo, dblp_context, completion_dir):
+        with ires.as_file(dir_traversable) as file:
+            file.mkdir(parents=True, exist_ok=True)
 
-    '''Events having same title and label in wikidata are not required to be matched again'''
-    records_with_diff_labels = utility.check_unmatched_titles_labels(records_remaining)
-    matches_with_wikidata_labels = matcher.match(event_extractor.extract_wikidata_label(records_with_diff_labels),
-                                                 LABEL)
-    records_remaining_with_no_matches = [record for record in records_remaining if
-                                         record not in matches_with_wikidata_labels]
-    '''Dump events where no matches are found'''
-    with open(os.path.join(resources_path, "events_without_matches.json"), "w", encoding="utf-8") as final:
-        json.dump(records_remaining_with_no_matches, final, default=Utility.serialize_datetime)
+    use_zip_if_no_dblp_context(resource_dir / "dblp" / "conf.zip", dblp_path)
 
-    events_with_dblp_event_id = [event for event in records_remaining_with_no_matches if 'dblpEventId' in event]
-    print("Records without matches: ", len(records_remaining_with_no_matches))
-    print("Records with dblpEventId: ", len(events_with_dblp_event_id))
+    repository = Repository(
+        query_manager=WikiDataQueryManager(),
+        dblp_repo=DblpRepository(dblp_context=DblpContext()),
+        completion_cache=CompletionCache(),
+    )
 
-    print("Matches from label of event in wikidata: ", len(matches_with_wikidata_labels))
+    fix_known_errors(repository)
 
-    print("Total matches = ",
-          len(matches_with_ceurws_titles) + len(matches_with_wikidata_titles) + len(matches_with_wikidata_labels))
+    # Requesting over 3000 files from dblp can take a lot of time!
+    # scrape_wikidata_with_dblp_id(repository)
 
-    print(len(matches_with_ceurws_titles and matches_with_wikidata_titles and matches_with_wikidata_labels))
+    complete_information(repository)
 
-    ## Import data to neo4j
-    # TODO: Enable when local neo4j instance is running
-    # import_data = ImportData()
-    # import_data.fetch_data_and_import()
+    completed_events = [
+        repository.get_event_by_qid(qid=qid, patched=True)
+        for qid in repository.events_by_qid.keys()
+    ]
+    completed_series = [
+        repository.get_event_series_by_qid(qid=qid, patched=True)
+        for qid in repository.event_series_by_qid.keys()
+    ]
 
-    # nlp matches
-    nlp_matcher = NlpMatcher(event_extractor, matcher)
-    nlp_matcher.match()
+    # Match through dblp
+    to_be_completed = repository.events_without_series(ignore_match_completions=True)
 
-    # nlp_matcher.
+    dblp_matcher = DblpMatcher(repository=repository, to_be_matched=to_be_completed)
+    dblp_matches = dblp_matcher.match_through_dblp()
+    logging.info("Found %s many matches through dblp", len(dblp_matches))
+    workshop_matches = len([m for m in dblp_matches if m.event.type == WikiDataEventType.WORKSHOP])
+    conference_matches = len(
+        [m for m in dblp_matches if m.event.type == WikiDataEventType.CONFERENCE]
+    )
+    logging.info(
+        "Out of which %s were conferences and %s workshops", conference_matches, workshop_matches
+    )
+    matched_events = set(match.event.qid for match in dblp_matches)
+
+    unmatched_events = [event for event in to_be_completed if event.qid not in matched_events]
+
+    full_matches_found = full_matches(unmatched_events, completed_series)
+    logging.info("Found %s matches through full-matches.", len(full_matches_found))
+
+    for match in full_matches_found:
+        matched_events.add(match.event.qid)
+    # All events that were neither matched by dblp nor through full matches
+    unmatched_events = [event for event in unmatched_events if event.qid not in matched_events]
+    logging.info("There are %s remaining unmatched events", len(unmatched_events))
+
+    training_set = create_training_test_dataset(dblp_matches + full_matches_found)
+    logging.info("Created training set of %s entries.", len(training_set))
+
+    nlp_matcher = NlpMatcher(training_set)
+    nlp_matches = nlp_matcher.match(unmatched_events, completed_series)
+    logging.info("Found %s matched through nlp-matches.", len(nlp_matches))
+
+    # Use case scenario 1
+    series_completion = SeriesCompletion(repository)
+    event_series = series_completion.get_event_series_from_ceur_ws_proceedings()
+
+    del repository
+    time.sleep(2)  # give repository time to save before python shuts down

@@ -1,161 +1,140 @@
-import json
-import os
+import logging
+from typing import List, Optional, Set, Dict
 
-import nltk
 import pandas as pd
-from nltk.corpus import stopwords
 from nltk import ngrams
-from nltk.metrics.distance import jaccard_distance
+
+from eventseries.src.main.repository.completions import FullMatch
+from eventseries.src.main.repository.wikidata_dataclasses import (
+    WikiDataEvent,
+    WikiDataEventSeries,
+    get_title_else_label,
+)
+
+
+def dice_coefficient(ngrams_first: Set, ngrams_second: Set):
+    if len(ngrams_first) == 0 and len(ngrams_second) == 0:
+        return 0
+    return (2 * len(ngrams_first.intersection(ngrams_second))) / (
+        len(ngrams_first) + len(ngrams_second)
+    )
 
 
 class NgramMatch:
     def __init__(self, matches_df: pd.DataFrame) -> None:
         matches_df.dropna(inplace=True)
         self.matches_df = matches_df
-        self.stop_words = set(stopwords.words('english'))
-        self.event_titles = self.remove_stopwords(matches_df["event"].tolist())
-        self.matches_df["event"] = self.event_titles
-        self.series_titles = self.remove_stopwords(matches_df["event_series"].tolist())
-        self.matches_df["event_series"] = self.series_titles
-        self.series_distinct = []
+        self.event_titles_to_series_titles: Dict[str, str] = {}
+        for _, row in matches_df.iterrows():
+            self.event_titles_to_series_titles[row["event"]] = row["series"]
         self.n_grams = [3, 4, 5]
-        self.threshold_values = [1, 0.9, 0.8, 0.7, 0.6, 0.5]
-        self.best_threshold = 0
-        self.best_n = 0
+        self.recall = 0.835909631391201
+        self.threshold_values = [0.8, 0.7, 0.6]
+        self.best_threshold = 0.6
+        self.best_n = 3
+        self.fit()
 
-    def matcher(self):
+    def fit(self):
         max_f1_score = 0
-        max_matches = 0
+        # max_matches = 0
         best_precision = 0
         best_recall = 0
         best_n_gram = 0
         best_threshold = 0
 
-        for i in self.n_grams:
-            n = i  # Number of words in each n-gram
-            for j in self.threshold_values:
-                threshold = j  # Minimum required similarity for a partial match
+        all_series_titles: List[str] = list(self.event_titles_to_series_titles.values())
+
+        for n_gram_size in self.n_grams:
+            for threshold in self.threshold_values:
+                # threshold is the minimum required similarity for a partial match.
                 true_positives = 0
                 false_positives = 0
                 false_negatives = 0
-                partially_matched_events = []
-                for event in self.event_titles:
-                    # We need this dict because there can be a many-to-many mapping between event and event series
-                    matched_events_dict = {}
-                    matched_series = ""
-                    event_ngrams = set(ngrams(event.split(), n))
-                    for series in self.series_titles:
-                        series_ngrams = set(ngrams(series.split(), n))
-                        '''There can be cases that series or events don't have 3 words'''
-                        similarity = 0
-                        if len(event_ngrams.union(series_ngrams)) > 0:
-                            similarity = 1 - jaccard_distance(event_ngrams, series_ngrams)
+                for event, true_match in self.event_titles_to_series_titles.items():
+                    matched_series: Optional[str] = self.match_to_series(
+                        event, all_series_titles, n_gram_size, threshold
+                    )
 
-                        if ((similarity >= threshold) and (event in matched_events_dict and similarity >
-                                                           matched_events_dict[event])) or (
-                                event not in matched_events_dict
-                                and similarity >= threshold):
-                            matched_events_dict[event] = similarity
-                            matched_series = series
-
-                    #             print("Partial match found:")
-                    #             print(f"#####MATCHED_EVENT#####{event}")
-                    #             print(f"######MATCHED_SERIES######{matched_series}")
-                    #             print()
-                    if (
-                            self.matches_df.loc[self.matches_df['event'] == event, 'event_series'].values[
-                                0]) == matched_series:
+                    if matched_series is not None and matched_series == true_match:
                         true_positives += 1
-                    elif matched_series == "":
-                        # We consider all the events that did not give out a match as the false negative set.
+                    elif matched_series is None:
+                        # We consider all events that did not match as false negative set.
                         false_negatives += 1
                     else:
+                        # We found a match, but it wasn't the right one.
                         false_positives += 1
 
-                    if series not in self.series_distinct:
-                        self.series_distinct.append(series)
-                    #             print()
-                    partially_matched_events.append(event)
-
-                # print(f"Statistics for {n}-grams and threshold:{threshold}->")
-                # print()
-                # print("true positives: ", true_positives)
-                # print("false positives: ", false_positives)
-                # print("false negatives: ", false_negatives)
+                # Calculate the quality of matches.
                 precision = true_positives / (true_positives + false_positives)
-                # print("Precision: ", precision)
                 recall = true_positives / (true_positives + false_negatives)
-                # print("Recall: ", recall)
                 f1_score = 2 * (precision * recall) / (precision + recall)
+
+                # Log results for this combination of parameter.
+                logging.debug(
+                    "Statistics for %s n-grams and threshold: %s ->", n_gram_size, threshold
+                )
+                logging.debug("true positives: %s", true_positives)
+                logging.debug("false positives: %s", false_positives)
+                logging.debug("false negatives: %s", false_negatives)
+                logging.debug("Precision %s, recall %s and f1 %s", precision, recall, f1_score)
+
                 if f1_score > max_f1_score:
                     best_precision = precision
                     best_recall = recall
                     max_f1_score = f1_score
-                    max_matches = len(partially_matched_events)
-                    best_n_gram = n
+                    best_n_gram = n_gram_size
                     best_threshold = threshold
-                # print("F1-Score: ", f1_score)
-                # print("Number of partial matches: ", len(partially_matched_events))
-                # print()
 
-        print("Best Choice for n-grams: ")
-        print(f"Statistics for {best_n_gram}-grams and threshold: {best_threshold}->")
-        print("Precision: ", best_precision)
-        print("Recall: ", best_recall)
-        print("F1-Score: ", max_f1_score)
-        # print("Maximum number of partial matches: ", max_matches)
+        # After all combinations of threshold and n_gram_size were tested.
+        logging.debug("Best Choice for n-grams: ")
+        logging.debug("Statistics for %s n-grams and threshold: %s ->", best_n_gram, best_threshold)
+        logging.debug("Precision: %s", best_precision)
+        logging.debug("Recall: %s", best_recall)
+        self.recall = best_recall
+        logging.debug("F1-Score: %s", max_f1_score)
         self.best_n = best_n_gram
         self.best_threshold = best_threshold
 
-    def wikidata_match(self, existing_matches):
-        partially_matched_events = []
-        events_file = os.path.join(os.path.abspath("resources"), "events_without_matches.json")
-        series_file = os.path.join(os.path.abspath("resources"), "event_series.json")
-        with open(events_file) as file:
-            events = json.load(file)
-            event_titles = [item['title'] for item in events if 'title' in item]
-        event_titles = [event for event in event_titles if event not in existing_matches]
-        with open(series_file) as file:
-            series = json.load(file)
-            series_titles = [item["title"]["value"] for item in series["results"]["bindings"] if "title" in item]
+    @staticmethod
+    def match_to_series(
+        event: str, series_list: List[str], n_gram_size, threshold, word_wise=False
+    ):
+        event_ngrams = set(ngrams(event.split() if word_wise else event, n_gram_size))
+        best_similarity_value: Optional[float] = None
+        best_match: Optional[str] = None
+        for series in series_list:
+            series_ngrams = set(ngrams(series.split() if word_wise else series, n_gram_size))
+            similarity = dice_coefficient(event_ngrams, series_ngrams)
+            if similarity < threshold:
+                continue
+            if best_similarity_value is None or similarity > best_similarity_value:
+                best_match = series
+                best_similarity_value = similarity
 
-        for event in event_titles:
-            matched_events_dict = {}
-            matched_series = ""
-            event_ngrams = set(ngrams(event.split(), self.best_n))
-            for series in series_titles:
-                series_ngrams = set(ngrams(series.split(), self.best_n))
-                '''There can be cases that series or events don't have 3 words'''
-                if len(event_ngrams.union(series_ngrams)) > 0:
-                    similarity = 1 - jaccard_distance(event_ngrams, series_ngrams)
+        return best_match
 
-                if ((similarity >= self.best_threshold) and (event in matched_events_dict and similarity >
-                                                             matched_events_dict[event])) or (
-                        event not in matched_events_dict
-                        and similarity >= self.best_threshold):
-                    matched_events_dict[event] = similarity
-                    matched_series = series
-            # print("Partial match found:")
-            # print(f"#####EVENT#####{event}")
-            # print(f"######SERIES######{matched_series}")
-            #     if series not in series_distinct:
-            #         series_distinct.append(series)
-            # print()
-            if matched_series != "":
-                partially_matched_events.append(event)
-        print("Number of unique matches from n-grams in Wikidata: ", len(partially_matched_events))
-        return partially_matched_events
+    def match_events_to_series(
+        self, event_list: List[WikiDataEvent], series_list: List[WikiDataEventSeries]
+    ) -> List[FullMatch]:
+        if self.recall == 1:
+            logging.error("Model is overfitting, and cannot be used")
+            return []
+        series_title_to_series = {get_title_else_label(series): series for series in series_list}
 
-    def remove_stopwords(self, text_list):
-        # Remove stopwords from each string in the list
-        filtered_list = []
-        for text in text_list:
-            # Tokenize the string into individual words
-            words = nltk.word_tokenize(text)
-            # Remove stopwords from the list of words
-            filtered_words = [word for word in words if word.lower() not in self.stop_words]
-            # Join the filtered words back into a string
-            filtered_text = ' '.join(filtered_words)
-            # Add the filtered string to the filtered list
-            filtered_list.append(filtered_text)
-        return filtered_list
+        found_matches: List[FullMatch] = []
+        for event in event_list:
+            event_title = get_title_else_label(event)
+            found_match = NgramMatch.match_to_series(
+                event_title, list(series_title_to_series.keys()), self.best_n, self.best_threshold
+            )
+            if found_match is None:
+                continue
+            found_matches.append(
+                FullMatch(
+                    event=event,
+                    series=series_title_to_series[found_match],
+                    found_by="NgramMatch::wikidata_match",
+                )
+            )
+
+        return found_matches
