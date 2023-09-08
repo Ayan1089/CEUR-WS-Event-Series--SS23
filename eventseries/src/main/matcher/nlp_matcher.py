@@ -94,6 +94,8 @@ class NlpMatcher:
         )
         logging.info("Found %s matched through tf-idf-matches.", len(tfidf_matches))
 
+        logging.basicConfig(level=logging.WARNING)
+        # Ony log warnings while execution gensin module
         naive_word2vec_matcher = NaiveWord2VecMatch(self.train_test_set)
         naive_matches = naive_word2vec_matcher.wikidata_match(unmatched_events, all_event_series)
         remaining_events = unmatched_events
@@ -112,12 +114,13 @@ class NlpMatcher:
             word2vec_sg_1_matches = word2vec_matcher_sg_1.wikidata_match(
                 unmatched_events, all_event_series
             )
-            logging.info("Matches for Word2VecMatch:")
-            logging.info(
-                "Found %s matches with skip_grams=0 and %s for skp_grams=1",
-                len(word2vec_sg_0_matches),
-                len(word2vec_sg_1_matches),
-            )
+        logging.basicConfig(level=logging.INFO)
+        logging.info("Matches for Word2VecMatch: Skipped second = %s", not try_multiple_skip_grams)
+        logging.info(
+            "Found %s matches with skip_grams=0 and %s for skp_grams=1",
+            len(word2vec_sg_0_matches),
+            len(word2vec_sg_1_matches),
+        )
 
         all_found_matches: List[FullMatch] = (
             phrase_matches
