@@ -2,9 +2,9 @@
 
 ### Overview
 
-- `dblp.py` contains the logic for requesting pages and caching them.
+- `DblpContext.py` contains the logic for requesting pages and caching them.
 - `DblpScraper.py` contains the logic for navigating dblp.org and requesting the correct pages.
-- `DblpParser.py` is used to extract all meta informations from the requested html-files
+- `DblpParser.py` is used to extract the informations from the requested html-files
 - The parsed information is structured in dataclasses defined in the files `VenueInformationClasses.py`
   and `EventClasses.py`
 
@@ -31,6 +31,13 @@
 ### Mapping events to event-series
 
 #### Standard Cases
+- Use the *breadcrumb* section of the event to extract the *dblp id* of the event series
+  - This is clearly defined only for conferences
+  - For workshops one has to distinguish between multiple linked series
+    - For example the [iStar](https://dblp.org/db/conf/istar/istar2015.html) workshop has two links
+  - Or extract workshop series information from the linked conference series
+    - For example the workshop [SocInf](https://dblp.org/db/conf/ijcai/socinf2015.html) only links to the conference series [IJCAI](https://dblp.org/db/conf/ijcai/index.html) which contains a list of workshop series
+    - This information can be read from the `VenueInformation` of the parsed series 
 - There is an additional workshop page for one conference
   - Usually the id will be the same as the conference with an additional "w" suffix
   - e.g. [conf/iccbr/iccbr2015](https://dblp.org/db/conf/iccbr/iccbr2015.html)
@@ -71,7 +78,7 @@
         - conf/aiide
         - conf/hcomp
         - conf/hcomp
-- Bad formatting for multiple events
+- Extra formatting for multiple events
     - [DECLARE 2017 (21st INAP 2017 / 25th WFLP 2017 / 31st WLP 2017): Würzburg, Germany](https://dblp.org/db/conf/wlp/index.html)
 - Missing : between year and location
     - [9th CIKM 2000 Washington, DC, USA](https://dblp.org/db/conf/cikm/index.html)

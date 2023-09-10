@@ -2,7 +2,7 @@
 
 ### Task
 
-1. Find [CEUR-WS](https://ceur-ws.org/) related academic events in [wikidata](https://www.wikidata.org/wiki/Q27230297)
+1. Find [CEUR-WS](https://ceur-ws.org/) related academic events in [Wikidata](https://www.wikidata.org/wiki/Q27230297)
 2. Some events have the [property 179](https://www.wikidata.org/wiki/Property:P179) (**part of the series**)
 3. For all events that don't have this property find whether,
     - they are part of a conference/workshop series or
@@ -46,20 +46,28 @@ classDiagram
 `Conference Proceedings Series (Q27785883)` <|--  `CEUR-WS (Q27230297)`
 Event --> EventSeries: part of the series (P179)
 ```
+![Associations and Properties in Wikidata](docs/Associations.excalidraw.svg)
+  - You can edit this file at [Excalidraw](https://excalidraw.com/)
 
-#### Current Progress
+### Progress
 
-- Extracted relevant events from wikidata
-- Implemented first matching-algorithms
+- Two main approaches
+  - Match directly based on attributes (title, acronym)
+  - Match through DBLP
+- Extracted relevant events from Wikidata
+- Implemented various matching-algorithms mostly comparing titles
 - Parsed and scraped events and their series from [dblp](https://dblp.org) that are related to CEUR-WS
     - Extracted meta-information, event-information, event-series-information
-    - Matched conferences to their series if they have `dblpEventSeriesId`
-- ![Sankey plot about the progress](docs/Sankey&#32;Progress&#32;23.06.png)
+    - Matched conferences to their series through dblp
+- More information can be found in the [final presentation](docs/Final%20Prensentation.pdf)
+- ![Sankey plot about the progress](docs/Sankey&#32;Progress&#32;09.09.png)
 
 ### Structure
 
-- NOTE: The project organization is currently under refactoring
+- ![Architecture](docs/Architecture.excalidraw.svg)
+  - The excalidraw information is embedded in the file
 - The main module is `eventseries`
+- Test are found in `eventseries/src/tests`
   - More information about *dblp* can be found in `eventseries/src/main/dblp`
   - Resources like `.json`, `.pickle` or `.csv` files are located
     in `eventseries/src/main/resources`
