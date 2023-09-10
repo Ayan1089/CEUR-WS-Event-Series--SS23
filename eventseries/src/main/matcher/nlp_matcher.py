@@ -59,7 +59,7 @@ class NlpMatcher:
         unmatched_events: List[WikiDataEvent],
         event_series: List[WikiDataEventSeries],
         additional_series: Optional[List[str]] = None,
-        try_multiple_skip_grams=False,
+        skip_word2vec=True,
     ) -> List[Match]:
         if additional_series is None:
             additional_series = read_miscellaneous_event_series()
@@ -94,32 +94,8 @@ class NlpMatcher:
         )
         logging.info("Found %s matched through tf-idf-matches.", len(tfidf_matches))
 
-        logging.basicConfig(level=logging.WARNING)
-        # Ony log warnings while execution gensin module
-        naive_word2vec_matcher = NaiveWord2VecMatch(self.train_test_set)
-        naive_matches = naive_word2vec_matcher.wikidata_match(unmatched_events, all_event_series)
-        remaining_events = unmatched_events
-        for match in naive_matches:
-            remaining_events.remove(match.event)
-
-        # Since our training data is less we start with skip grams = 0 i.e. - CBOW
-        word2vec_matcher_sg_0 = Word2VecMatch(self.train_test_set, 0)
-        word2vec_sg_0_matches = word2vec_matcher_sg_0.wikidata_match(
-            unmatched_events, all_event_series
-        )
-
-        word2vec_sg_1_matches = []
-        if try_multiple_skip_grams:  # Example runs showed that both find the same matches
-            word2vec_matcher_sg_1 = Word2VecMatch(self.train_test_set, 1)
-            word2vec_sg_1_matches = word2vec_matcher_sg_1.wikidata_match(
-                unmatched_events, all_event_series
-            )
-        logging.basicConfig(level=logging.INFO)
-        logging.info("Matches for Word2VecMatch: Skipped second = %s", not try_multiple_skip_grams)
-        logging.info(
-            "Found %s matches with skip_grams=0 and %s for skp_grams=1",
-            len(word2vec_sg_0_matches),
-            len(word2vec_sg_1_matches),
+        naive_matches, word2vec_matches = [], (
+            [] if skip_word2vec else self._word2vec(unmatched_events, all_event_series)
         )
 
         all_found_matches: List[FullMatch] = (
@@ -128,8 +104,7 @@ class NlpMatcher:
             + ngram_matches
             + tfidf_matches
             + naive_matches
-            + word2vec_sg_0_matches
-            + word2vec_sg_1_matches
+            + word2vec_matches
         )
         logging.info(
             "In total %s matches were reported (possibly duplicate).", len(all_found_matches)
@@ -159,6 +134,40 @@ class NlpMatcher:
 
         return final_matches
 
+    def _word2vec(
+        self, unmatched_events: List[WikiDataEvent], all_event_series: List[WikiDataEventSeries]
+    ):
+        logging.basicConfig(level=logging.WARNING)
+        # Ony log warnings while execution gensin module
+        naive_word2vec_matcher = NaiveWord2VecMatch(self.train_test_set)
+        naive_matches = naive_word2vec_matcher.wikidata_match(unmatched_events, all_event_series)
+        remaining_events = unmatched_events
+        for match in naive_matches:
+            remaining_events.remove(match.event)
+
+        # Since our training data is less we start with skip grams = 0 i.e. - CBOW
+        word2vec_matcher_sg_0 = Word2VecMatch(self.train_test_set, 0)
+        word2vec_sg_0_matches = word2vec_matcher_sg_0.wikidata_match(
+            unmatched_events, all_event_series
+        )
+
+        word2vec_matcher_sg_1 = Word2VecMatch(self.train_test_set, 1)
+        word2vec_sg_1_matches = word2vec_matcher_sg_1.wikidata_match(
+            unmatched_events, all_event_series
+        )
+        logging.basicConfig(level=logging.INFO)
+        logging.info(
+            "Found %s matches with skip_grams=0 and %s for skp_grams=1",
+            len(word2vec_sg_0_matches),
+            len(word2vec_sg_1_matches),
+        )
+        word2vec_qid = set((match.event.qid, match.series.qid) for match in word2vec_sg_0_matches)
+        unique_word2vec = word2vec_sg_0_matches
+        for vec2 in word2vec_sg_1_matches:
+            if (vec2.event.qid, vec2.series.qid) not in word2vec_qid:
+                unique_word2vec.append(vec2)
+        return naive_matches, unique_word2vec
+
     def cross_validate_and_merge(
         self, matches: List[FullMatch], required_to_pass: int
     ) -> List[FullMatch]:
@@ -167,7 +176,7 @@ class NlpMatcher:
         by_qids: Dict[Tuple[QID, QID], List[FullMatch]] = {}
 
         def get_key(match: FullMatch):
-            return (match.event.qid, match.series.qid)
+            return match.event.qid, match.series.qid
 
         for match in matches:
             key = get_key(match)

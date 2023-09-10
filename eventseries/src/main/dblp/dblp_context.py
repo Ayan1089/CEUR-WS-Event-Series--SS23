@@ -1,3 +1,4 @@
+import logging
 import time
 from importlib import resources as ires
 from pathlib import Path
@@ -72,7 +73,7 @@ class DblpContext:
         if dblp_id.startswith("https") or dblp_id.endswith(".html"):
             raise ValueError("dblp_id seems to be an url: " + dblp_id)
         if len(dblp_id) > 100:
-            print("dblp_id seems unusually long: " + dblp_id)
+            logging.info("dblp_id seems unusually long: " + dblp_id)
 
         return dblp_id.removesuffix("/")
 
@@ -94,7 +95,7 @@ class DblpContext:
         """
         cleaned_id = DblpContext._validate_and_clean_dblp_id(dblp_id)
         if cleaned_id in self.dblp_cache:
-            print("Warning! Overriding cached content: " + dblp_id)
+            logging.warning("Overriding cached content: " + dblp_id)
         self.dblp_cache[cleaned_id] = content
 
     def is_cached(self, dblp_id: str) -> bool:
@@ -108,7 +109,7 @@ class DblpContext:
 
     def load_cache(self):
         if not self.dblp_conf_path.is_dir() or not self.dblp_conf_path.exists():
-            print(
+            logging.info(
                 f"Either {str(self.dblp_conf_path)} doesnt exist or is not a directory."
                 " Creating empty dict."
             )
@@ -126,7 +127,7 @@ class DblpContext:
                     file_dictionary[str(dblp_id)] = file.read()
 
         self.dblp_cache.update(file_dictionary)
-        print(f"Loaded dblp cache. Found {len(self.dblp_cache)} entries.")
+        logging.info(f"Loaded dblp cache. Found {len(self.dblp_cache)} entries.")
 
     def store_cache(self, overwrite=False):
         if not self.dblp_conf_path.is_dir():
@@ -147,7 +148,7 @@ class DblpContext:
             if hasattr(self, "dblp_cache") and hasattr(self, "dblp_conf_path"):
                 self.store_cache()
             else:
-                print(
+                logging.error(
                     "Failed to store cache. Did not found attribute: "
                     f"dblp_cache = {hasattr(self, 'dblp_cache')} "
                     f"dblp_file_path = {hasattr(self, 'dblp_file_path')}"
@@ -164,7 +165,7 @@ class DblpContext:
             retry_time = response.headers.get("Retry-After")
             error_msg = "Too many requests to dblp.org"
             if retry and retry_time is not None:
-                print(f"{error_msg} Waiting for {retry_time}s before retrying.")
+                logging.info(f"{error_msg} Waiting for {retry_time}s before retrying.")
                 time.sleep(int(retry_time))
                 return self.request_dblp(dblp_url, retry, ignore_timeout=ignore_timeout)
             # failed request without retrying

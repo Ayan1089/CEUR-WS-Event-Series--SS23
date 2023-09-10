@@ -156,4 +156,4 @@ class TestCompletions(TestCase):
             ),
         ]
         completions = complete_ceurws_titles(proceedigns)
-        self.assertEqual(10, len(completions))
+        self.assertEqual(len(proceedigns), len(completions))

@@ -48,7 +48,7 @@ def extract_dblp_zip(zip_path: Path, extract_to: Path):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     # Create the directories for persistence.
     resource_dir = ires.files("eventseries.src.main") / "resources"
     query_dir = resource_dir / "query_results"
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     logging.info("Created training set of %s entries.", len(training_set))
 
     nlp_matcher = NlpMatcher(training_set)
-    nlp_matches = nlp_matcher.match(unmatched_events, completed_series)
+    nlp_matches = nlp_matcher.match(unmatched_events, completed_series, skip_word2vec=True)
     logging.info("Found %s matched through nlp-matches.", len(nlp_matches))
 
     # Use case scenario 1
