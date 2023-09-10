@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from eventseries.src.main.dblp.event_classes import DblpEvent, DblpEventSeries
 from eventseries.src.main.repository.completion_cache import CompletionCache
@@ -32,8 +32,9 @@ class Repository:
         self.proceeding_by_qid: Dict[QID, WikiDataProceeding] = {
             item.qid: item for item in self.query_manager.wikidata_all_proceedings()
         }
-        self.proceeding_by_event_qid: Dict[QID, WikiDataProceeding] = {
-            item.event: item for item in self.proceeding_by_qid.values()
+        # We assume a 1-to-1 mapping. However some proceedings are part of multiple events
+        self.proceedings_qid_by_event_qid: Dict[QID, QID] = {
+            proceeding.event: proceeding.qid for proceeding in self.proceeding_by_qid.values()
         }
         self.completion_cache = completion_cache
 
@@ -66,17 +67,20 @@ class Repository:
             completion.patch_item(raw_series)
         return raw_series
 
+    def get_proceeding_by_event_qid(
+        self, event_qid: QID, patched: bool = True
+    ) -> Optional[WikiDataProceeding]:
+        if event_qid in self.proceedings_qid_by_event_qid:
+            return self.get_proceeding_by_qid(self.proceedings_qid_by_event_qid[event_qid], patched)
+
     def get_dblp_event_by_id(self, dblp_id: str) -> DblpEvent:
         return self.dblp_repo.get_or_load_event(dblp_id)
-
 
     def get_dblp_event_series_by_id(self, dblp_id: str) -> DblpEventSeries:
         return self.dblp_repo.get_or_load_event_series(dblp_id)
 
-
     def get_matches(self) -> list[Match]:
         return self.completion_cache.get_all_matches()
-
 
     def events_without_series(self, ignore_match_completions: bool = False) -> List[WikiDataEvent]:
         events_without_series = [
@@ -86,7 +90,6 @@ class Repository:
             return events_without_series
         matches_dict = self.matches_by_event_qid()
         return [event for event in events_without_series if event.qid not in matches_dict]
-
 
     def _add_type_to_events_and_series(self):
         for conf_series in self.query_manager.wikidata_conference_series():

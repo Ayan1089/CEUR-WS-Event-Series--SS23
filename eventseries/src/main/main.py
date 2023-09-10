@@ -8,8 +8,8 @@ import logging
 import time
 import zipfile
 from pathlib import Path
+from typing import Optional, Dict
 
-from eventseries.src.main.completion.attribute_completion import complete_information
 from eventseries.src.main.completion.series_completion import SeriesCompletion
 from eventseries.src.main.dblp.dblp_context import DblpContext
 from eventseries.src.main.matcher.dblp_matcher import DblpMatcher
@@ -18,7 +18,8 @@ from eventseries.src.main.matcher.nlp_matcher import create_training_test_datase
 from eventseries.src.main.repository.completion_cache import CompletionCache
 from eventseries.src.main.repository.dblp_respository import DblpRepository
 from eventseries.src.main.repository.repository import Repository
-from eventseries.src.main.repository.wikidata_dataclasses import QID, WikiDataEventType
+from eventseries.src.main.repository.wikidata_dataclasses import QID, WikiDataEventType, \
+    WikiDataProceeding
 from eventseries.src.main.repository.wikidata_query_manager import WikiDataQueryManager
 
 
@@ -47,7 +48,7 @@ def extract_dblp_zip(zip_path: Path, extract_to: Path):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     # Create the directories for persistence.
     resource_dir = ires.files("eventseries.src.main") / "resources"
     query_dir = resource_dir / "query_results"
@@ -72,7 +73,9 @@ if __name__ == "__main__":
     # Requesting over 3000 files from dblp can take a lot of time!
     # scrape_wikidata_with_dblp_id(repository)
 
-    complete_information(repository)
+    # complete_information(repository)
+
+    repository.completion_cache.store_cached(overwrite=True)
 
     completed_events = [
         repository.get_event_by_qid(qid=qid, patched=True)
@@ -96,11 +99,16 @@ if __name__ == "__main__":
     logging.info(
         "Out of which %s were conferences and %s workshops", conference_matches, workshop_matches
     )
-    matched_events = set(match.event.qid for match in dblp_matches)
+    matched_events = set(match.event.qid for match in repository.get_matches())
 
     unmatched_events = [event for event in to_be_completed if event.qid not in matched_events]
+    # dictionary of event to proceedings-ceurws-title
+    ceurws_titles: Dict[QID, Optional[str]] = {}
+    for event in unmatched_events:
+        proceeding: WikiDataProceeding = repository.get_proceeding_by_event_qid(event.qid)
+        ceurws_titles[event.qid] = proceeding.ceurws_title if proceeding else None
 
-    full_matches_found = full_matches(unmatched_events, completed_series)
+    full_matches_found = full_matches(unmatched_events, completed_series, ceurws_titles)
     logging.info("Found %s matches through full-matches.", len(full_matches_found))
 
     for match in full_matches_found:
