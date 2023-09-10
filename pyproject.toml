@@ -36,7 +36,8 @@ dependencies = [
     "validators>=0.21.2",
     "beautifulsoup4>=4.10",
     "selenium>=4.11",
-    "gensim"
+    "gensim",
+    "aiohttp>=3.8.5"
 
 ]
 
