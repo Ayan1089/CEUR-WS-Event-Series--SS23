@@ -32,8 +32,9 @@ def fix_known_errors(repo: Repository):
 
 
 def use_zip_if_no_dblp_context(zip_source_path, target_path):
-    with ires.as_file(target_path / "conf") as conf_file:
-        if conf_file.exists():
+    with ires.as_file(target_path / "conf") as conf_dir:
+        if conf_dir.exists() and len(list(conf_dir.iterdir())) > 0:
+            logging.debug("Skipping dblp-zip extraction, directory exists and is not empty.")
             return
         logging.info("Extracting zip archive of dblp content.")
     with ires.as_file(zip_source_path) as zip_file, ires.as_file(target_path) as dblp_file:
